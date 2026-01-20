@@ -27,11 +27,6 @@ func NewMenuModel() *MenuModel {
 	return &MenuModel{
 		items: []MenuItem{
 			{
-				Title:       "How to Start",
-				Description: "Learn how to setup and use ppopcode",
-				Icon:        "📖",
-			},
-			{
 				Title:       "Link Accounts",
 				Description: "Setup Claude and Cursor authentication",
 				Icon:        "🔗",
@@ -45,6 +40,11 @@ func NewMenuModel() *MenuModel {
 				Title:       "Workflow",
 				Description: "Select and run cc-wf-studio workflows",
 				Icon:        "📋",
+			},
+			{
+				Title:       "How to Start",
+				Description: "Learn how to setup and use ppopcode",
+				Icon:        "📖",
 			},
 			{
 				Title:       "Settings",

@@ -10,7 +10,6 @@ var (
 	accentColor    = lipgloss.Color("#F59E0B")
 	textColor      = lipgloss.Color("#E5E7EB")
 	mutedColor     = lipgloss.Color("#6B7280")
-	bgColor        = lipgloss.Color("#1F2937")
 
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
@@ -31,11 +30,6 @@ var (
 
 	mutedStyle = lipgloss.NewStyle().
 			Foreground(mutedColor)
-
-	statusBarStyle = lipgloss.NewStyle().
-			Background(bgColor).
-			Foreground(textColor).
-			Padding(0, 1)
 
 	chatBubbleUser = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).

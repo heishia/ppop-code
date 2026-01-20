@@ -125,6 +125,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, a.keys.Back):
 			if a.currentView != ViewMenu {
 				a.currentView = ViewMenu
+				a.menu.Selected = -1 // Reset menu selection
 				return a, nil
 			}
 		}
@@ -139,16 +140,17 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if a.menu.Selected != -1 {
 			switch a.menu.Selected {
-			case 0:
-				a.currentView = ViewHowTo
-			case 1:
+			case 0: // Link Accounts
 				a.currentView = ViewSetup
 				return a, a.setup.checkStatus
-			case 2:
+			case 1: // Chat
 				a.currentView = ViewChat
 				a.chat.Focus()
-			case 3:
+			case 2: // Workflow
 				a.currentView = ViewWorkflow
+			case 3: // How to Start
+				a.currentView = ViewHowTo
+				// case 4: Settings (not implemented yet)
 			}
 			a.menu.Selected = -1
 		}

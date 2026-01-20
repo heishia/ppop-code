@@ -15,7 +15,7 @@ help: ## Show this help message
 	@echo "Available commands:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-build: ## Build the binary
+build: clean ## Build the binary (auto-cleans previous build)
 	@echo "Building $(BINARY_NAME)..."
 	go mod tidy
 	go build -o $(BINARY_NAME) ./cmd/ppopcode
@@ -40,7 +40,12 @@ endif
 
 clean: ## Remove built binaries
 	@echo "Cleaning..."
+ifeq ($(OS),Windows_NT)
+	@if exist $(BINARY_NAME) del /f $(BINARY_NAME)
+else
 	rm -f $(BINARY_NAME)
+endif
+	go clean
 	@echo "✓ Clean complete"
 
 test: ## Run tests
