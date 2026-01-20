@@ -1,40 +1,39 @@
-framework:
+app:
   name: ppopcode
   version: 1.0.0
-  description: Claude Code + cc-wf-studio + Cursor AI Agent Orchestration Framework
+  debug: false
 
-execution:
-  default_timeout: 300
-  max_retries: 2
+agents:
+  orchestrator:
+    type: claude
+    model: claude-opus-4-20250514
+    role: Main orchestrator - analyzes tasks and routes to appropriate agents
+    max_tokens: 4096
 
-error_handling:
-  on_cursor_fail: retry
-  on_skill_fail: ask_user
-  on_timeout: ask_user
-  log_errors: true
+  gemini:
+    type: gemini
+    model: gemini-2.0-flash
+    role: Frontend specialist - UX/UI development
+    max_tokens: 4096
 
-integrations:
-  cc_wf_studio:
-    enabled: true
-    workflow_dir: .vscode/workflows
-    auto_sync: false
+  gpt:
+    type: openai
+    model: gpt-4o
+    role: Design & debugging specialist
+    max_tokens: 4096
 
-  claude_code:
-    enabled: true
-    skills_dir: .claude/skills
-    hooks_dir: .claude/hooks
+  sonnet:
+    type: claude
+    model: claude-sonnet-4-20250514
+    role: General coding tasks
+    max_tokens: 4096
 
-  cursor:
-    enabled: true
-    config_file: bridges.yaml
+cursor:
+  command: cursor-agent
+  timeout: 300
+  max_retry: 2
 
-logging:
-  level: info
-  format: "[{timestamp}] [{level}] {message}"
-  output: console
-
-paths:
-  skills: .claude/skills
-  hooks: .claude/hooks
-  workflows: .vscode/workflows
-  project_rules: project-rules
+session:
+  save_history: true
+  history_dir: .ppopcode/history
+  max_history: 100

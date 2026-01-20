@@ -1,6 +1,3 @@
-# Local skills (personal/private)
-.claude/skills/_local/
-
 # Environment
 .env
 .env.local
