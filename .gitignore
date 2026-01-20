@@ -29,3 +29,8 @@ Thumbs.db
 
 # Documentation
 docs/
+
+# Build artifacts
+*.exe
+ppopcode
+ppopcode-*
