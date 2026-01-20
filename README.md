@@ -33,6 +33,27 @@ ppopcode brings all your AI tools into one terminal. Just say what you want, and
 
 ---
 
+### Before vs After
+
+**Before (The Old Way)**
+```
+1. Open ChatGPT in browser
+2. Ask question, copy answer
+3. Open Cursor
+4. Paste code
+5. Stuck? Go back to step 1...
+→ Repeat, repeat, repeat 😩
+```
+
+**After (ppopcode)**
+```
+1. Run ppopcode in terminal
+2. Type what you want
+3. Done! 😊
+```
+
+---
+
 ## What is this?
 
 ppopcode combines multiple AI models (Claude, GPT, Gemini) into a single terminal interface. You say what you want, and it automatically picks the right AI for the job.
