@@ -66,12 +66,52 @@ ppopcode combines multiple AI models (Claude, GPT, Gemini) into a single termina
 
 ### Installation
 
+**Quick Install (Recommended)**
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/ppopcode/ppopcode.git
+cd ppopcode
+
+# 2. Build and install (if you have make)
+make install
+
+# Or manually:
+# Build the binary
+go mod tidy
+go build -o ppopcode ./cmd/ppopcode
+
+# Install globally (Linux/Mac)
+chmod +x install.sh
+./install.sh
+
+# Or on Windows (PowerShell)
+.\install.ps1
+
+# 3. Use from anywhere!
+ppopcode
+```
+
+**Manual Installation**
+
+If you prefer to run without installing:
+
 ```bash
 git clone https://github.com/ppopcode/ppopcode.git
 cd ppopcode
 go mod tidy
 go build -o ppopcode ./cmd/ppopcode
 ./ppopcode
+```
+
+**Uninstall**
+
+```bash
+# Linux/Mac
+./install.sh uninstall
+
+# Windows
+.\install.ps1 -Uninstall
 ```
 
 ### cc-wf-studio Extension (Optional)

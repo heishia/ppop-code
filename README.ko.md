@@ -100,6 +100,12 @@ cd ppopcode
 
 ### 3단계: 빌드하기
 
+**make가 있으면 (간편):**
+```bash
+make build
+```
+
+**make가 없으면:**
 ```bash
 go mod tidy
 go build -o ppopcode ./cmd/ppopcode
@@ -111,7 +117,50 @@ go mod tidy
 go build -o ppopcode.exe ./cmd/ppopcode
 ```
 
-### 4단계: 실행하기
+### 4단계: 전역 설치하기 (권장)
+
+어디서든 `ppopcode` 명령어를 사용할 수 있게 설치해요.
+
+**make가 있으면 (간편):**
+```bash
+make install
+```
+
+**make가 없으면:**
+
+Linux/Mac:
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+Windows (PowerShell):
+```powershell
+.\install.ps1
+```
+
+설치가 끝나면 새 터미널을 열고:
+```bash
+ppopcode
+```
+
+**현재 터미널에서 바로 사용하려면:**
+
+Linux/Mac:
+```bash
+export PATH="$PATH:$HOME/bin"
+ppopcode
+```
+
+Windows (PowerShell):
+```powershell
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+ppopcode
+```
+
+### 4단계 (대안): 설치 없이 실행하기
+
+전역 설치를 원하지 않으면 프로젝트 폴더에서 직접 실행할 수 있어요.
 
 ```bash
 ./ppopcode
@@ -120,6 +169,20 @@ go build -o ppopcode.exe ./cmd/ppopcode
 Windows에서는:
 ```powershell
 .\ppopcode.exe
+```
+
+### 제거하기
+
+더 이상 사용하지 않으면 제거할 수 있어요.
+
+**Linux/Mac:**
+```bash
+./install.sh uninstall
+```
+
+**Windows:**
+```powershell
+.\install.ps1 -Uninstall
 ```
 
 ## cc-wf-studio 설치 (선택사항)
