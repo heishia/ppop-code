@@ -5,36 +5,44 @@ import (
 	"os"
 	"path/filepath"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/ppopcode/ppopcode/internal/config"
 	"github.com/ppopcode/ppopcode/internal/orchestrator"
 	"github.com/ppopcode/ppopcode/internal/session"
 	"github.com/ppopcode/ppopcode/internal/tui"
-
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
-	cfg, err := config.Load("config/ppopcode.yaml")
+	// Load configuration
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Printf("Warning: Failed to load config: %v\n", err)
+		homeDir = "."
+	}
+
+	configPath := filepath.Join(homeDir, ".ppopcode", "config.yaml")
+	cfg, err := config.Load(configPath)
+	if err != nil {
+		// Use default config if load fails
 		cfg = config.DefaultConfig()
 	}
 
-	agentConfigs := cfg.ToAgentConfigs()
-	orch := orchestrator.New(agentConfigs)
-
+	// Initialize session manager
 	historyDir := cfg.Session.HistoryDir
 	if !filepath.IsAbs(historyDir) {
-		cwd, _ := os.Getwd()
-		historyDir = filepath.Join(cwd, historyDir)
+		historyDir = filepath.Join(homeDir, ".ppopcode", historyDir)
 	}
 	sessionMgr := session.NewManager(historyDir, cfg.Session.MaxHistory)
 
-	app := tui.NewAppWithDeps(orch, sessionMgr, cfg)
-	p := tea.NewProgram(app, tea.WithAltScreen())
+	// Initialize orchestrator with agent configs
+	agentConfigs := cfg.ToAgentConfigs()
+	orch := orchestrator.New(agentConfigs)
 
+	// Create and run TUI app
+	app := tui.NewAppWithDeps(orch, sessionMgr, cfg)
+
+	p := tea.NewProgram(app, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
-		fmt.Printf("Error running ppopcode: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error running app: %v\n", err)
 		os.Exit(1)
 	}
 }

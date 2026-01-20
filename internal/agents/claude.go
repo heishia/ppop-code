@@ -103,9 +103,10 @@ func CheckClaudeLogin() ClaudeLoginStatus {
 	}
 
 	// Try to run a simple command to check login status
-	ctx, cancel := context.WithTimeout(context.Background(), 5*60) // 5 second timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*1000000000) // 5 second timeout (5 * 1 billion nanoseconds)
 	defer cancel()
 
+	// First check version to see if CLI works
 	cmd := exec.CommandContext(ctx, cliPath, "--version")
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -120,10 +121,35 @@ func CheckClaudeLogin() ClaudeLoginStatus {
 		}
 	}
 
-	// Check if we can actually use the CLI (login check)
-	// Running 'claude -p "test" --output-format text' would require login
-	// For now, we assume if CLI is found and runs, it's ready
-	// A more robust check would be to parse ~/.claude/config or similar
+	// Check actual login status by trying a minimal prompt
+	// If not logged in, this will fail with an auth error
+	ctx2, cancel2 := context.WithTimeout(context.Background(), 5*1000000000) // 5 seconds
+	defer cancel2()
+
+	testCmd := exec.CommandContext(ctx2, cliPath, "-p", "test", "--output-format", "text")
+	var testStdout, testStderr bytes.Buffer
+	testCmd.Stdout = &testStdout
+	testCmd.Stderr = &testStderr
+
+	testErr := testCmd.Run()
+	if testErr != nil {
+		stderrStr := testStderr.String()
+		// Check for common auth error messages
+		if strings.Contains(stderrStr, "login") || strings.Contains(stderrStr, "Invalid API key") ||
+			strings.Contains(stderrStr, "authentication") || strings.Contains(stderrStr, "Please run /login") {
+			return ClaudeLoginStatus{
+				LoggedIn: false,
+				Message:  "Not logged in. Please run 'claude login'",
+				CLIFound: true,
+			}
+		}
+		// Other errors might not be auth-related
+		return ClaudeLoginStatus{
+			LoggedIn: false,
+			Message:  fmt.Sprintf("Claude CLI error: %s", stderrStr),
+			CLIFound: true,
+		}
+	}
 
 	return ClaudeLoginStatus{
 		LoggedIn: true,
@@ -139,38 +165,59 @@ func RunClaudeLogin() error {
 		return fmt.Errorf("claude CLI not found")
 	}
 
-	cmd := exec.Command(cliPath, "login")
-	cmd.Stdin = nil
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-
-	return cmd.Start()
+	// On Windows, we need to open a new terminal window for interactive login
+	switch runtime.GOOS {
+	case "windows":
+		// Use cmd.exe to open a new window and run claude login
+		cmd := exec.Command("cmd", "/c", "start", "cmd", "/k", cliPath, "login")
+		return cmd.Start()
+	case "darwin":
+		// macOS: open in Terminal.app
+		script := fmt.Sprintf(`tell application "Terminal" to do script "%s login"`, cliPath)
+		cmd := exec.Command("osascript", "-e", script)
+		return cmd.Start()
+	default:
+		// Linux: try various terminal emulators
+		terminals := []string{"gnome-terminal", "konsole", "xterm"}
+		for _, term := range terminals {
+			if _, err := exec.LookPath(term); err == nil {
+				var cmd *exec.Cmd
+				switch term {
+				case "gnome-terminal":
+					cmd = exec.Command(term, "--", cliPath, "login")
+				case "konsole":
+					cmd = exec.Command(term, "-e", cliPath, "login")
+				default:
+					cmd = exec.Command(term, "-e", cliPath, "login")
+				}
+				return cmd.Start()
+			}
+		}
+		return fmt.Errorf("no suitable terminal emulator found")
+	}
 }
 
 // findClaudeCLI finds the claude CLI executable
 func findClaudeCLI() string {
-	if runtime.GOOS == "windows" {
-		possiblePaths := []string{
+	var possiblePaths []string
+
+	switch runtime.GOOS {
+	case "windows":
+		possiblePaths = []string{
 			"claude",
 			"claude.exe",
 		}
-
-		for _, p := range possiblePaths {
-			if path, err := exec.LookPath(p); err == nil {
-				return path
-			}
-		}
-	} else {
-		possiblePaths := []string{
+	default:
+		possiblePaths = []string{
 			"claude",
 			"/usr/local/bin/claude",
 			"/usr/bin/claude",
 		}
+	}
 
-		for _, p := range possiblePaths {
-			if path, err := exec.LookPath(p); err == nil {
-				return path
-			}
+	for _, p := range possiblePaths {
+		if path, err := exec.LookPath(p); err == nil {
+			return path
 		}
 	}
 

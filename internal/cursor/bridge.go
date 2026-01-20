@@ -162,8 +162,11 @@ func (b *Bridge) createPromptFile(req EditRequest) (string, error) {
 }
 
 func (b *Bridge) getCursorCommand() string {
-	if runtime.GOOS == "windows" {
-		possiblePaths := []string{
+	var possiblePaths []string
+
+	switch runtime.GOOS {
+	case "windows":
+		possiblePaths = []string{
 			"cursor-agent",
 			"cursor-agent.exe",
 			filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "cursor", "resources", "app", "bin", "cursor-agent.exe"),
@@ -177,8 +180,8 @@ func (b *Bridge) getCursorCommand() string {
 				return p
 			}
 		}
-	} else {
-		possiblePaths := []string{
+	default:
+		possiblePaths = []string{
 			"cursor-agent",
 			"/usr/local/bin/cursor-agent",
 			filepath.Join(os.Getenv("HOME"), ".cursor", "bin", "cursor-agent"),
@@ -287,7 +290,8 @@ func CheckCursorLogin() CursorLoginStatus {
 func OpenCursorLogin() error {
 	var cmd *exec.Cmd
 
-	if runtime.GOOS == "windows" {
+	switch runtime.GOOS {
+	case "windows":
 		// Try to open Cursor IDE on Windows
 		possiblePaths := []string{
 			filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "cursor", "Cursor.exe"),
@@ -304,9 +308,9 @@ func OpenCursorLogin() error {
 				break
 			}
 		}
-	} else if runtime.GOOS == "darwin" {
+	case "darwin":
 		cmd = exec.Command("open", "-a", "Cursor")
-	} else {
+	default:
 		// Linux
 		if path, err := exec.LookPath("cursor"); err == nil {
 			cmd = exec.Command(path)
@@ -322,28 +326,25 @@ func OpenCursorLogin() error {
 
 // findCursorCLI finds the cursor CLI executable
 func findCursorCLI() string {
-	if runtime.GOOS == "windows" {
-		possiblePaths := []string{
+	var possiblePaths []string
+
+	switch runtime.GOOS {
+	case "windows":
+		possiblePaths = []string{
 			"cursor",
 			"cursor.exe",
 		}
-
-		for _, p := range possiblePaths {
-			if path, err := exec.LookPath(p); err == nil {
-				return path
-			}
-		}
-	} else {
-		possiblePaths := []string{
+	default:
+		possiblePaths = []string{
 			"cursor",
 			"/usr/local/bin/cursor",
 			"/usr/bin/cursor",
 		}
+	}
 
-		for _, p := range possiblePaths {
-			if path, err := exec.LookPath(p); err == nil {
-				return path
-			}
+	for _, p := range possiblePaths {
+		if path, err := exec.LookPath(p); err == nil {
+			return path
 		}
 	}
 
@@ -352,8 +353,11 @@ func findCursorCLI() string {
 
 // findCursorAgent finds the cursor-agent executable
 func findCursorAgent() string {
-	if runtime.GOOS == "windows" {
-		possiblePaths := []string{
+	var possiblePaths []string
+
+	switch runtime.GOOS {
+	case "windows":
+		possiblePaths = []string{
 			"cursor-agent",
 			"cursor-agent.exe",
 			filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "cursor", "resources", "app", "bin", "cursor-agent.exe"),
@@ -367,8 +371,8 @@ func findCursorAgent() string {
 				return p
 			}
 		}
-	} else {
-		possiblePaths := []string{
+	default:
+		possiblePaths = []string{
 			"cursor-agent",
 			"/usr/local/bin/cursor-agent",
 			filepath.Join(os.Getenv("HOME"), ".cursor", "bin", "cursor-agent"),
