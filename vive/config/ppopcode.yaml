@@ -1,0 +1,40 @@
+framework:
+  name: ppopcode
+  version: 1.0.0
+  description: Claude Code + cc-wf-studio + Cursor AI Agent Orchestration Framework
+
+execution:
+  default_timeout: 300
+  max_retries: 2
+
+error_handling:
+  on_cursor_fail: retry
+  on_skill_fail: ask_user
+  on_timeout: ask_user
+  log_errors: true
+
+integrations:
+  cc_wf_studio:
+    enabled: true
+    workflow_dir: .vscode/workflows
+    auto_sync: false
+
+  claude_code:
+    enabled: true
+    skills_dir: .claude/skills
+    hooks_dir: .claude/hooks
+
+  cursor:
+    enabled: true
+    config_file: bridges.yaml
+
+logging:
+  level: info
+  format: "[{timestamp}] [{level}] {message}"
+  output: console
+
+paths:
+  skills: .claude/skills
+  hooks: .claude/hooks
+  workflows: .vscode/workflows
+  project_rules: project-rules

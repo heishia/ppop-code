@@ -1,0 +1,37 @@
+cursor:
+  windows:
+    command: wsl ~/.local/bin/cursor-agent
+    shell: powershell
+    script_ext: .ps1
+  
+  unix:
+    command: cursor-agent
+    shell: bash
+    script_ext: .sh
+  
+  common:
+    timeout: 300
+    max_retries: 2
+    retry_delay: 5
+  
+  default_args:
+    - --no-interactive
+  
+  env:
+    CURSOR_TELEMETRY: "0"
+
+claude:
+  mode: cli
+  command: claude
+  
+  api:
+    enabled: false
+    model: claude-sonnet-4-20250514
+  
+  settings:
+    auto_approve: false
+
+health_check:
+  enabled: true
+  on_startup: true
+  interval: 0
