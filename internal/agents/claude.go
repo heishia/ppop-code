@@ -170,12 +170,14 @@ func RunClaudeLogin() error {
 	// On Windows, we need to open a new terminal window for interactive login
 	switch runtime.GOOS {
 	case "windows":
-		// Use cmd.exe to open a new window and run claude login
-		cmd := exec.Command("cmd", "/c", "start", "cmd", "/k", cliPath, "login")
+		// Use cmd.exe to open a new window and run claude with /login command
+		// Note: "start" requires empty string "" as window title when the command has arguments
+		// /login is an internal Claude Code command (not a CLI flag)
+		cmd := exec.Command("cmd", "/c", "start", "", "cmd", "/k", cliPath, "/login")
 		return cmd.Start()
 	case "darwin":
 		// macOS: open in Terminal.app
-		script := fmt.Sprintf(`tell application "Terminal" to do script "%s login"`, cliPath)
+		script := fmt.Sprintf(`tell application "Terminal" to do script "%s /login"`, cliPath)
 		cmd := exec.Command("osascript", "-e", script)
 		return cmd.Start()
 	default:
@@ -186,11 +188,11 @@ func RunClaudeLogin() error {
 				var cmd *exec.Cmd
 				switch term {
 				case "gnome-terminal":
-					cmd = exec.Command(term, "--", cliPath, "login")
+					cmd = exec.Command(term, "--", cliPath, "/login")
 				case "konsole":
-					cmd = exec.Command(term, "-e", cliPath, "login")
+					cmd = exec.Command(term, "-e", cliPath, "/login")
 				default:
-					cmd = exec.Command(term, "-e", cliPath, "login")
+					cmd = exec.Command(term, "-e", cliPath, "/login")
 				}
 				return cmd.Start()
 			}

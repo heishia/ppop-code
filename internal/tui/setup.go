@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,12 +21,13 @@ type SetupItem struct {
 }
 
 type SetupModel struct {
-	items   []SetupItem
-	cursor  int
-	width   int
-	height  int
-	message string
-	loading bool
+	items           []SetupItem
+	cursor          int
+	width           int
+	height          int
+	message         string
+	loading         bool
+	waitingForLogin bool // true when waiting for external login to complete
 }
 
 // StatusCheckMsg is sent when status check completes
@@ -39,6 +41,9 @@ type ActionResultMsg struct {
 	success bool
 	message string
 }
+
+// autoRefreshMsg is sent periodically to check login status
+type autoRefreshMsg struct{}
 
 func NewSetupModel() *SetupModel {
 	return &SetupModel{
@@ -72,11 +77,40 @@ func (m *SetupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case StatusCheckMsg:
 		m.loading = false
 		m.items = m.buildItems(msg.claudeStatus, msg.cursorStatus)
+
+		// Check if all logins are complete - stop auto-refresh
+		allLoggedIn := true
+		for _, item := range m.items {
+			if !item.StatusOK {
+				allLoggedIn = false
+				break
+			}
+		}
+		if allLoggedIn && m.waitingForLogin {
+			m.waitingForLogin = false
+			m.message = "All accounts connected!"
+			return m, nil
+		}
+
+		// Continue auto-refresh if waiting for login
+		if m.waitingForLogin {
+			return m, m.scheduleAutoRefresh()
+		}
+		return m, nil
+
+	case autoRefreshMsg:
+		if m.waitingForLogin {
+			return m, m.checkStatus
+		}
 		return m, nil
 
 	case ActionResultMsg:
 		m.message = msg.message
-		// Refresh status after action
+		if msg.success {
+			m.waitingForLogin = true
+			// Start auto-refresh cycle
+			return m, tea.Batch(m.checkStatus, m.scheduleAutoRefresh())
+		}
 		return m, m.checkStatus
 
 	case tea.KeyMsg:
@@ -96,11 +130,19 @@ func (m *SetupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case msg.String() == "r":
 			// Refresh status
 			m.loading = true
+			m.waitingForLogin = false // Manual refresh stops auto-refresh
 			return m, m.checkStatus
 		}
 	}
 
 	return m, nil
+}
+
+// scheduleAutoRefresh returns a command that sends autoRefreshMsg after 5 seconds
+func (m *SetupModel) scheduleAutoRefresh() tea.Cmd {
+	return tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
+		return autoRefreshMsg{}
+	})
 }
 
 func (m *SetupModel) buildItems(claudeStatus agents.ClaudeLoginStatus, cursorStatus cursor.CursorLoginStatus) []SetupItem {
@@ -170,7 +212,7 @@ func (m *SetupModel) runAction(index int) tea.Cmd {
 
 		return ActionResultMsg{
 			success: true,
-			message: "Action started. Please complete the setup in the opened window.",
+			message: "Login window opened. Waiting for login... (auto-refreshing every 5s)",
 		}
 	}
 }

@@ -58,104 +58,31 @@ func (m *HowToModel) View() string {
 	b.WriteString(title)
 	b.WriteString("\n\n")
 
-	// Prerequisites section
-	prereqTitle := lipgloss.NewStyle().
+	// Requirements section
+	reqTitle := lipgloss.NewStyle().
 		Foreground(primaryColor).
 		Bold(true).
-		Render("Prerequisites")
-	b.WriteString(prereqTitle)
+		Render("Requirements")
+	b.WriteString(reqTitle)
 	b.WriteString("\n\n")
 
-	prerequisites := []string{
-		"1. Claude Account",
-		"   → Sign up at https://claude.ai",
-		"   → Required for Claude Code CLI",
-		"",
-		"2. Claude Code CLI",
-		"   → Install: npm install -g @anthropic-ai/claude-code",
-		"   → Login:   claude login",
-		"   → This opens browser for authentication",
-		"",
-		"3. Cursor IDE (Recommended)",
-		"   → Download from https://cursor.sh",
-		"   → Used for AI-powered code editing",
-		"",
+	requirements := []string{
+		"✓ Claude Code CLI",
+		"✓ Cursor CLI",
 	}
 
-	for _, line := range prerequisites {
-		if strings.HasPrefix(line, "   →") {
-			b.WriteString(mutedStyle.Render(line))
-		} else if line == "" {
-			b.WriteString("")
-		} else {
-			b.WriteString(normalStyle.Render(line))
-		}
-		b.WriteString("\n")
-	}
-
-	// Quick Start section
-	quickTitle := lipgloss.NewStyle().
-		Foreground(primaryColor).
-		Bold(true).
-		Render("Quick Start")
-	b.WriteString("\n")
-	b.WriteString(quickTitle)
-	b.WriteString("\n\n")
-
-	quickStart := []string{
-		"Step 1: Install Claude Code CLI",
-		"   $ npm install -g @anthropic-ai/claude-code",
-		"",
-		"Step 2: Login to Claude",
-		"   $ claude login",
-		"   (Browser will open for authentication)",
-		"",
-		"Step 3: Run ppopcode",
-		"   $ ppopcode",
-		"",
-		"Step 4: Go to 'Link Accounts' to verify setup",
-		"   Both Claude Code and Cursor should show ✅",
-		"",
-	}
-
-	for _, line := range quickStart {
-		if strings.HasPrefix(line, "   $") {
-			cmdStyle := lipgloss.NewStyle().Foreground(accentColor)
-			b.WriteString(cmdStyle.Render(line))
-		} else if strings.HasPrefix(line, "   ") {
-			b.WriteString(mutedStyle.Render(line))
-		} else if line == "" {
-			b.WriteString("")
-		} else {
-			b.WriteString(normalStyle.Render(line))
-		}
-		b.WriteString("\n")
-	}
-
-	// Features section
-	featTitle := lipgloss.NewStyle().
-		Foreground(primaryColor).
-		Bold(true).
-		Render("Features")
-	b.WriteString("\n")
-	b.WriteString(featTitle)
-	b.WriteString("\n\n")
-
-	features := []string{
-		"🔗 Link Accounts - Setup and verify authentication",
-		"💬 Chat         - Talk with AI agents (Claude, GPT, Gemini)",
-		"📋 Workflow     - Run automated coding workflows",
-		"⚙️  Settings     - Configure agents and preferences",
-	}
-
-	for _, line := range features {
+	for _, line := range requirements {
 		b.WriteString(normalStyle.Render(line))
 		b.WriteString("\n")
 	}
 
-	// Help
 	b.WriteString("\n")
-	help := helpStyle.Render("↑/↓: scroll • esc: back to menu")
+	notice := mutedStyle.Render("Install both before using ppopcode.")
+	b.WriteString(notice)
+
+	// Help
+	b.WriteString("\n\n")
+	help := helpStyle.Render("esc: back to menu")
 	b.WriteString(help)
 
 	content := menuStyle.Render(b.String())
