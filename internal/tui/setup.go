@@ -50,6 +50,8 @@ func NewSetupModel() *SetupModel {
 		items:   []SetupItem{},
 		cursor:  0,
 		loading: true,
+		width:   80, // Default width
+		height:  24, // Default height
 	}
 }
 

@@ -13,36 +13,38 @@ import (
 )
 
 func main() {
-	// Load configuration
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		homeDir = "."
-	}
-
+	// Get config path
+	homeDir, _ := os.UserHomeDir()
 	configPath := filepath.Join(homeDir, ".ppopcode", "config.yaml")
+
+	// Load configuration (will use defaults if file doesn't exist)
 	cfg, err := config.Load(configPath)
 	if err != nil {
-		// Use default config if load fails
+		fmt.Fprintf(os.Stderr, "Warning: Could not load config: %v\n", err)
 		cfg = config.DefaultConfig()
 	}
 
 	// Initialize session manager
-	historyDir := cfg.Session.HistoryDir
-	if !filepath.IsAbs(historyDir) {
-		historyDir = filepath.Join(homeDir, ".ppopcode", historyDir)
-	}
-	sessionMgr := session.NewManager(historyDir, cfg.Session.MaxHistory)
+	historyDir := filepath.Join(homeDir, cfg.Session.HistoryDir)
+	sess := session.NewManager(historyDir, cfg.Session.MaxHistory)
 
 	// Initialize orchestrator with agent configs
 	agentConfigs := cfg.ToAgentConfigs()
 	orch := orchestrator.New(agentConfigs)
 
-	// Create and run TUI app
-	app := tui.NewAppWithDeps(orch, sessionMgr, cfg)
+	// Create app with dependencies
+	app := tui.NewAppWithDeps(orch, sess, cfg)
 
-	p := tea.NewProgram(app, tea.WithAltScreen())
+	// Create program with alt screen (full terminal takeover)
+	p := tea.NewProgram(
+		app,
+		tea.WithAltScreen(),
+		tea.WithMouseCellMotion(),
+	)
+
+	// Run the program
 	if _, err := p.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error running app: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error running ppopcode: %v\n", err)
 		os.Exit(1)
 	}
 }

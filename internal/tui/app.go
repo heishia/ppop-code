@@ -68,6 +68,7 @@ type App struct {
 	orchestrator *orchestrator.Orchestrator
 	session      *session.Manager
 	config       *config.Config
+	ready        bool // true after first WindowSizeMsg is received
 }
 
 func NewApp() *App {
@@ -99,6 +100,8 @@ func NewAppWithDeps(orch *orchestrator.Orchestrator, sess *session.Manager, cfg 
 }
 
 func (a *App) Init() tea.Cmd {
+	// Return nil - tea.WithAltScreen in main.go handles screen setup
+	// The window size message will be sent automatically
 	return nil
 }
 

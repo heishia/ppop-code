@@ -31,7 +31,7 @@ func NewClaudeAgent(config AgentConfig) (*ClaudeAgent, error) {
 		},
 	}
 
-	// Find claude CLI path
+	// Find claude CLI path (fast operation)
 	cliPath := findClaudeCLI()
 	if cliPath == "" {
 		agent.status = "cli_not_found"
@@ -39,13 +39,8 @@ func NewClaudeAgent(config AgentConfig) (*ClaudeAgent, error) {
 	}
 	agent.cliPath = cliPath
 
-	// Check login status
-	status := CheckClaudeLogin()
-	if !status.LoggedIn {
-		agent.status = "not_logged_in"
-		return agent, nil
-	}
-
+	// Don't check login status at startup - it's slow (5s timeout)
+	// Login will be checked when Execute() is called
 	agent.status = "ready"
 	return agent, nil
 }
@@ -93,7 +88,8 @@ func (a *ClaudeAgent) Execute(ctx context.Context, prompt string) (*Response, er
 	}, nil
 }
 
-// CheckClaudeLogin checks if the user is logged in to Claude CLI
+// CheckClaudeLogin checks if Claude CLI is available (fast check - no API calls)
+// Actual login status is verified when Execute() is called
 func CheckClaudeLogin() ClaudeLoginStatus {
 	cliPath := findClaudeCLI()
 	if cliPath == "" {
@@ -104,58 +100,11 @@ func CheckClaudeLogin() ClaudeLoginStatus {
 		}
 	}
 
-	// Try to run a simple command to check login status
-	ctx, cancel := context.WithTimeout(context.Background(), 5*1000000000) // 5 second timeout (5 * 1 billion nanoseconds)
-	defer cancel()
-
-	// First check version to see if CLI works
-	cmd := exec.CommandContext(ctx, cliPath, "--version")
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-	if err != nil {
-		return ClaudeLoginStatus{
-			LoggedIn: false,
-			Message:  fmt.Sprintf("Claude CLI error: %s", stderr.String()),
-			CLIFound: true,
-		}
-	}
-
-	// Check actual login status by trying a minimal prompt
-	// If not logged in, this will fail with an auth error
-	ctx2, cancel2 := context.WithTimeout(context.Background(), 5*1000000000) // 5 seconds
-	defer cancel2()
-
-	testCmd := exec.CommandContext(ctx2, cliPath, "-p", "test", "--output-format", "text")
-	var testStdout, testStderr bytes.Buffer
-	testCmd.Stdout = &testStdout
-	testCmd.Stderr = &testStderr
-
-	testErr := testCmd.Run()
-	if testErr != nil {
-		stderrStr := testStderr.String()
-		// Check for common auth error messages
-		if strings.Contains(stderrStr, "login") || strings.Contains(stderrStr, "Invalid API key") ||
-			strings.Contains(stderrStr, "authentication") || strings.Contains(stderrStr, "Please run /login") {
-			return ClaudeLoginStatus{
-				LoggedIn: false,
-				Message:  "Not logged in. Please run 'claude login'",
-				CLIFound: true,
-			}
-		}
-		// Other errors might not be auth-related
-		return ClaudeLoginStatus{
-			LoggedIn: false,
-			Message:  fmt.Sprintf("Claude CLI error: %s", stderrStr),
-			CLIFound: true,
-		}
-	}
-
+	// Fast check: just verify CLI exists and is executable
+	// Don't check login status here - it's slow and will be checked when actually used
 	return ClaudeLoginStatus{
-		LoggedIn: true,
-		Message:  fmt.Sprintf("Claude CLI ready: %s", strings.TrimSpace(stdout.String())),
+		LoggedIn: true, // Assume logged in - will error on Execute() if not
+		Message:  "Claude CLI ready",
 		CLIFound: true,
 	}
 }

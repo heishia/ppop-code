@@ -54,6 +54,8 @@ func NewMenuModel() *MenuModel {
 		},
 		cursor:   0,
 		Selected: -1,
+		width:    80, // Default width
+		height:   24, // Default height
 	}
 }
 
