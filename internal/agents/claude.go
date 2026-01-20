@@ -1,9 +1,11 @@
 package agents
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -86,6 +88,144 @@ func (a *ClaudeAgent) Execute(ctx context.Context, prompt string) (*Response, er
 		Content: strings.TrimSpace(stdout.String()),
 		Model:   a.config.Model,
 	}, nil
+}
+
+// ExecuteStream executes the prompt and streams output in real-time
+func (a *ClaudeAgent) ExecuteStream(ctx context.Context, prompt string, stream chan<- StreamChunk) (*Response, error) {
+	defer close(stream)
+
+	if a.cliPath == "" {
+		stream <- StreamChunk{Content: "Claude CLI not found", Type: "error", Done: true}
+		return &Response{
+			Content: fmt.Sprintf("[%s] Claude CLI not found.", a.config.Name),
+			Model:   a.config.Model,
+		}, nil
+	}
+
+	status := CheckClaudeLogin()
+	if !status.LoggedIn {
+		stream <- StreamChunk{Content: "Not logged in to Claude", Type: "error", Done: true}
+		return &Response{
+			Content: fmt.Sprintf("[%s] Not logged in to Claude.", a.config.Name),
+			Model:   a.config.Model,
+		}, nil
+	}
+
+	a.SetStatus("processing")
+	defer a.SetStatus("ready")
+
+	stream <- StreamChunk{Content: "Starting Claude...", Type: "status"}
+
+	// Build command arguments - use streaming output
+	args := []string{"-p", prompt, "--output-format", "stream-json"}
+
+	cmd := exec.CommandContext(ctx, a.cliPath, args...)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		stream <- StreamChunk{Content: fmt.Sprintf("Failed to create pipe: %v", err), Type: "error", Done: true}
+		return nil, fmt.Errorf("failed to create stdout pipe: %w", err)
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		stream <- StreamChunk{Content: fmt.Sprintf("Failed to create stderr pipe: %v", err), Type: "error", Done: true}
+		return nil, fmt.Errorf("failed to create stderr pipe: %w", err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		stream <- StreamChunk{Content: fmt.Sprintf("Failed to start: %v", err), Type: "error", Done: true}
+		return nil, fmt.Errorf("failed to start claude: %w", err)
+	}
+
+	var fullOutput strings.Builder
+
+	// Read stdout in real-time
+	go func() {
+		reader := bufio.NewReader(stdout)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				if err != io.EOF {
+					stream <- StreamChunk{Content: fmt.Sprintf("Read error: %v", err), Type: "error"}
+				}
+				break
+			}
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+
+			// Parse streaming JSON output from Claude CLI
+			chunkType, content := parseClaudeStreamLine(line)
+			if content != "" {
+				fullOutput.WriteString(content)
+				stream <- StreamChunk{Content: content, Type: chunkType}
+			}
+		}
+	}()
+
+	// Read stderr for thinking/status
+	go func() {
+		reader := bufio.NewReader(stderr)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				break
+			}
+			line = strings.TrimSpace(line)
+			if line != "" {
+				stream <- StreamChunk{Content: line, Type: "thinking"}
+			}
+		}
+	}()
+
+	err = cmd.Wait()
+	if err != nil {
+		if ctx.Err() != nil {
+			stream <- StreamChunk{Content: "Cancelled", Type: "status", Done: true}
+			return nil, fmt.Errorf("request cancelled: %w", ctx.Err())
+		}
+		stream <- StreamChunk{Content: fmt.Sprintf("Error: %v", err), Type: "error", Done: true}
+		return nil, fmt.Errorf("claude error: %w", err)
+	}
+
+	stream <- StreamChunk{Content: "Done", Type: "status", Done: true}
+
+	return &Response{
+		Content: strings.TrimSpace(fullOutput.String()),
+		Model:   a.config.Model,
+	}, nil
+}
+
+// parseClaudeStreamLine parses a line from Claude CLI stream-json output
+func parseClaudeStreamLine(line string) (chunkType, content string) {
+	// Claude CLI stream-json format outputs JSON objects
+	// We do simple parsing here - could use encoding/json for more robust parsing
+	if strings.Contains(line, `"type":"thinking"`) || strings.Contains(line, `"thinking"`) {
+		// Extract thinking content
+		if idx := strings.Index(line, `"content":"`); idx != -1 {
+			start := idx + len(`"content":"`)
+			end := strings.Index(line[start:], `"`)
+			if end != -1 {
+				return "thinking", line[start : start+end]
+			}
+		}
+		return "thinking", line
+	}
+	if strings.Contains(line, `"type":"text"`) || strings.Contains(line, `"text"`) {
+		if idx := strings.Index(line, `"content":"`); idx != -1 {
+			start := idx + len(`"content":"`)
+			end := strings.Index(line[start:], `"`)
+			if end != -1 {
+				return "output", line[start : start+end]
+			}
+		}
+		// If it's plain text output
+		return "output", line
+	}
+	// Default: treat as output
+	return "output", line
 }
 
 // CheckClaudeLogin checks if Claude CLI is available (fast check - no API calls)

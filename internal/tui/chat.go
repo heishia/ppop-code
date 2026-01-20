@@ -29,15 +29,18 @@ type Message struct {
 }
 
 type ChatModel struct {
-	messages     []Message
-	input        textarea.Model
-	viewport     viewport.Model
-	width        int
-	height       int
-	ready        bool
-	processing   bool
-	orchestrator *orchestrator.Orchestrator
-	session      *session.Manager
+	messages      []Message
+	input         textarea.Model
+	viewport      viewport.Model
+	width         int
+	height        int
+	ready         bool
+	processing    bool
+	streamingText string // Current streaming output
+	thinkingText  string // Current thinking/status text
+	currentAgent  string // Current agent processing
+	orchestrator  *orchestrator.Orchestrator
+	session       *session.Manager
 }
 
 func NewChatModel() *ChatModel {
@@ -122,20 +125,35 @@ func (m *ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
+			// Handle /clean command
+			if content == "/clean" || content == "/clear" {
+				m.messages = []Message{}
+				m.streamingText = ""
+				m.thinkingText = ""
+				m.currentAgent = ""
+				m.input.Reset()
+				m.viewport.SetContent(m.renderMessages())
+				return m, nil
+			}
+
 			m.messages = append(m.messages, Message{
 				Role:    RoleUser,
 				Content: content,
 			})
 
 			m.input.Reset()
+			m.streamingText = ""
+			m.thinkingText = ""
 			m.viewport.SetContent(m.renderMessages())
 			m.viewport.GotoBottom()
 
 			m.processing = true
-			return m, m.sendMessage(content)
+			return m, m.sendMessageStream(content)
 		}
 	case AssistantResponseMsg:
 		m.processing = false
+		m.streamingText = ""
+		m.thinkingText = ""
 		m.messages = append(m.messages, Message{
 			Role:    RoleAssistant,
 			Content: msg.Content,
@@ -144,6 +162,45 @@ func (m *ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewport.SetContent(m.renderMessages())
 		m.viewport.GotoBottom()
 		return m, nil
+
+	case StreamUpdateMsg:
+		m.currentAgent = msg.Agent
+
+		switch msg.Type {
+		case "status":
+			m.thinkingText = msg.Content
+		case "thinking":
+			m.thinkingText = msg.Content
+		case "output":
+			m.streamingText += msg.Content
+		case "error":
+			m.thinkingText = "Error: " + msg.Content
+		}
+
+		// Update viewport with current streaming content
+		m.viewport.SetContent(m.renderMessages())
+		m.viewport.GotoBottom()
+
+		if msg.Done {
+			// Final message received, add to messages
+			if m.streamingText != "" {
+				m.messages = append(m.messages, Message{
+					Role:    RoleAssistant,
+					Content: m.streamingText,
+					Model:   msg.Agent,
+				})
+			}
+			m.processing = false
+			m.streamingText = ""
+			m.thinkingText = ""
+			m.currentAgent = ""
+			m.viewport.SetContent(m.renderMessages())
+			m.viewport.GotoBottom()
+			return m, nil
+		}
+
+		// Continue listening for more updates
+		return m, ListenForStreamUpdates()
 	}
 
 	var inputCmd tea.Cmd
@@ -162,7 +219,17 @@ type AssistantResponseMsg struct {
 	Model   string
 }
 
-func (m *ChatModel) sendMessage(content string) tea.Cmd {
+// StreamUpdateMsg represents a real-time streaming update
+type StreamUpdateMsg struct {
+	Stage   string // "routing", "processing", "streaming", "completed", "error"
+	Content string
+	Agent   string
+	Type    string // "status", "thinking", "output", "error"
+	Done    bool
+}
+
+// sendMessageStream sends a message and returns streaming updates
+func (m *ChatModel) sendMessageStream(content string) tea.Cmd {
 	return func() tea.Msg {
 		if m.orchestrator == nil {
 			return AssistantResponseMsg{
@@ -171,39 +238,75 @@ func (m *ChatModel) sendMessage(content string) tea.Cmd {
 			}
 		}
 
+		// Start streaming process
 		ctx := context.Background()
-		task, err := m.orchestrator.Process(ctx, content)
-		if err != nil {
-			return AssistantResponseMsg{
-				Content: fmt.Sprintf("Error: %v", err),
-				Model:   "error",
+		progressChan := make(chan orchestrator.ProgressUpdate, 100)
+
+		go func() {
+			task, _ := m.orchestrator.ProcessStream(ctx, content, progressChan)
+			if task != nil && m.session != nil {
+				m.session.AddMessage("user", content, "")
+				m.session.AddMessage("assistant", task.Result, task.AssignedTo)
 			}
+		}()
+
+		// Return first update
+		update, ok := <-progressChan
+		if !ok {
+			return StreamUpdateMsg{Done: true}
 		}
 
-		if m.session != nil {
-			m.session.AddMessage("user", content, "")
-			m.session.AddMessage("assistant", task.Result, task.AssignedTo)
-		}
+		// Store channel in closure for subsequent reads
+		go m.listenForUpdates(progressChan)
 
-		return AssistantResponseMsg{
-			Content: task.Result,
-			Model:   task.AssignedTo,
+		return StreamUpdateMsg{
+			Stage:   update.Stage,
+			Content: update.Message,
+			Agent:   update.Agent,
+			Type:    update.Type,
+			Done:    update.Done,
 		}
 	}
 }
 
+// streamUpdateChan is used to send updates to the TUI
+var streamUpdateChan = make(chan StreamUpdateMsg, 100)
+
+// listenForUpdates listens for progress updates and sends them to the update channel
+func (m *ChatModel) listenForUpdates(progressChan <-chan orchestrator.ProgressUpdate) {
+	for update := range progressChan {
+		streamUpdateChan <- StreamUpdateMsg{
+			Stage:   update.Stage,
+			Content: update.Message,
+			Agent:   update.Agent,
+			Type:    update.Type,
+			Done:    update.Done,
+		}
+	}
+}
+
+// ListenForStreamUpdates returns a command that listens for stream updates
+func ListenForStreamUpdates() tea.Cmd {
+	return func() tea.Msg {
+		return <-streamUpdateChan
+	}
+}
+
 func (m *ChatModel) renderMessages() string {
-	if len(m.messages) == 0 {
+	if len(m.messages) == 0 && m.streamingText == "" && m.thinkingText == "" {
 		welcome := `
 Welcome to ppopcode!
 
 I'm your AI orchestrator. I'll analyze your request and route it to the best agent:
 
-  • Gemini 3 Pro  → UX/UI tasks
-  • GPT 5.2       → Design & debugging
-  • Sonnet 4.5    → General coding
+  * Gemini 3 Pro  -> UX/UI tasks
+  * GPT 5.2       -> Design & debugging
+  * Sonnet 4.5    -> General coding
 
 Code modifications will be executed by Cursor.
+
+Commands:
+  /clean - Clear chat history
 
 How can I help you today?
 `
@@ -227,6 +330,31 @@ How can I help you today?
 		b.WriteString("\n")
 	}
 
+	// Show current streaming content
+	if m.processing && (m.streamingText != "" || m.thinkingText != "") {
+		b.WriteString("\n")
+
+		// Show thinking/status
+		if m.thinkingText != "" {
+			thinkingStyle := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("243")).
+				Italic(true)
+			b.WriteString(thinkingStyle.Render(fmt.Sprintf("[thinking] %s", m.thinkingText)))
+			b.WriteString("\n")
+		}
+
+		// Show streaming output
+		if m.streamingText != "" {
+			modelTag := ""
+			if m.currentAgent != "" {
+				modelTag = mutedStyle.Render(fmt.Sprintf("[%s]", m.currentAgent)) + "\n"
+			}
+			streamingContent := modelTag + m.streamingText + "_" // Cursor indicator
+			bubble := chatBubbleAssistant.Render(streamingContent)
+			b.WriteString(bubble)
+		}
+	}
+
 	return b.String()
 }
 
@@ -235,16 +363,20 @@ func (m *ChatModel) View() string {
 		return "Loading..."
 	}
 
-	header := titleStyle.Render("💬 Chat")
+	header := titleStyle.Render("Chat")
 
 	statusText := ""
 	if m.processing {
-		statusText = lipgloss.NewStyle().Foreground(accentColor).Render(" ⏳ Processing...")
+		if m.currentAgent != "" {
+			statusText = lipgloss.NewStyle().Foreground(accentColor).Render(fmt.Sprintf(" [%s] Processing...", m.currentAgent))
+		} else {
+			statusText = lipgloss.NewStyle().Foreground(accentColor).Render(" Processing...")
+		}
 	}
 
 	headerLine := lipgloss.JoinHorizontal(lipgloss.Left, header, statusText)
 
-	help := helpStyle.Render("Enter: send • Esc: back to menu • Shift+Enter: newline")
+	help := helpStyle.Render("Enter: send | Esc: back to menu | /clean: clear chat | Shift+Enter: newline")
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,

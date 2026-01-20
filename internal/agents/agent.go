@@ -29,8 +29,16 @@ type Response struct {
 	Error      error
 }
 
+// StreamChunk represents a chunk of streaming output
+type StreamChunk struct {
+	Content string
+	Type    string // "thinking", "output", "error", "status"
+	Done    bool
+}
+
 type Agent interface {
 	Execute(ctx context.Context, prompt string) (*Response, error)
+	ExecuteStream(ctx context.Context, prompt string, stream chan<- StreamChunk) (*Response, error)
 	Status() string
 	Name() string
 	Model() string
