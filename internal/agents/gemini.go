@@ -66,8 +66,8 @@ func (a *GeminiAgent) Execute(ctx context.Context, prompt string) (*Response, er
 		candidate := result.Candidates[0]
 		if candidate.Content != nil && len(candidate.Content.Parts) > 0 {
 			for _, part := range candidate.Content.Parts {
-				if text, ok := part.(genai.Text); ok {
-					content += string(text)
+				if part.Text != "" {
+					content += part.Text
 				}
 			}
 		}
