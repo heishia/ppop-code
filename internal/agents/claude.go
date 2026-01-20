@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -203,7 +205,11 @@ func findClaudeCLI() string {
 
 	switch runtime.GOOS {
 	case "windows":
+		// Check npm global install location first
+		npmPath := filepath.Join(os.Getenv("APPDATA"), "npm", "claude.cmd")
 		possiblePaths = []string{
+			npmPath,
+			"claude.cmd",
 			"claude",
 			"claude.exe",
 		}
@@ -216,6 +222,11 @@ func findClaudeCLI() string {
 	}
 
 	for _, p := range possiblePaths {
+		// Check if file exists directly
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+		// Check in PATH
 		if path, err := exec.LookPath(p); err == nil {
 			return path
 		}
