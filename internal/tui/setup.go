@@ -12,20 +12,20 @@ import (
 )
 
 type SetupItem struct {
-	Title       string
-	Status      string
-	StatusOK    bool
-	Action      string
-	ActionFunc  func() error
+	Title      string
+	Status     string
+	StatusOK   bool
+	Action     string
+	ActionFunc func() error
 }
 
 type SetupModel struct {
-	items    []SetupItem
-	cursor   int
-	width    int
-	height   int
-	message  string
-	loading  bool
+	items   []SetupItem
+	cursor  int
+	width   int
+	height  int
+	message string
+	loading bool
 }
 
 // StatusCheckMsg is sent when status check completes
