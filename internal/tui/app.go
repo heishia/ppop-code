@@ -16,7 +16,7 @@ const (
 	ViewSetup
 	ViewChat
 	ViewWorkflow
-	ViewSettings
+	ViewAbout
 )
 
 type KeyMap struct {
@@ -62,6 +62,7 @@ type App struct {
 	setup        *SetupModel
 	chat         *ChatModel
 	workflow     *WorkflowModel
+	about        *AboutModel
 	width        int
 	height       int
 	keys         KeyMap
@@ -79,6 +80,7 @@ func NewApp() *App {
 		setup:       NewSetupModel(),
 		chat:        NewChatModel(),
 		workflow:    NewWorkflowModel(),
+		about:       NewAboutModel(),
 		keys:        DefaultKeyMap,
 	}
 }
@@ -92,6 +94,7 @@ func NewAppWithDeps(orch *orchestrator.Orchestrator, sess *session.Manager, cfg 
 		setup:        NewSetupModel(),
 		chat:         chat,
 		workflow:     NewWorkflowModel(),
+		about:        NewAboutModel(),
 		keys:         DefaultKeyMap,
 		orchestrator: orch,
 		session:      sess,
@@ -114,6 +117,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.setup.SetSize(msg.Width, msg.Height-4)
 		a.chat.SetSize(msg.Width, msg.Height-4)
 		a.workflow.SetSize(msg.Width, msg.Height-4)
+		a.about.SetSize(msg.Width, msg.Height-4)
 		return a, nil
 
 	case tea.KeyMsg:
@@ -144,17 +148,18 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if a.menu.Selected != -1 {
 			switch a.menu.Selected {
-			case 0: // Link Accounts
+			case 0: // How to Start
+				a.currentView = ViewHowTo
+			case 1: // Link Accounts
 				a.currentView = ViewSetup
 				return a, a.setup.checkStatus
-			case 1: // Chat
+			case 2: // Start with Chat
 				a.currentView = ViewChat
 				a.chat.Focus()
-			case 2: // Workflow
+			case 3: // Start with Workflow
 				a.currentView = ViewWorkflow
-			case 3: // How to Start
-				a.currentView = ViewHowTo
-				// case 4: Settings (not implemented yet)
+			case 4: // About
+				a.currentView = ViewAbout
 			}
 			a.menu.Selected = -1
 		}
@@ -178,6 +183,11 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		newWorkflow, wfCmd := a.workflow.Update(msg)
 		a.workflow = newWorkflow.(*WorkflowModel)
 		cmd = wfCmd
+
+	case ViewAbout:
+		newAbout, aboutCmd := a.about.Update(msg)
+		a.about = newAbout.(*AboutModel)
+		cmd = aboutCmd
 	}
 
 	return a, cmd
@@ -195,6 +205,8 @@ func (a *App) View() string {
 		return a.chat.View()
 	case ViewWorkflow:
 		return a.workflow.View()
+	case ViewAbout:
+		return a.about.View()
 	default:
 		return a.menu.View()
 	}

@@ -27,29 +27,29 @@ func NewMenuModel() *MenuModel {
 	return &MenuModel{
 		items: []MenuItem{
 			{
-				Title:       "Link Accounts",
-				Description: "Setup Claude and Cursor authentication",
-				Icon:        "🔗",
-			},
-			{
-				Title:       "Chat",
-				Description: "Start a conversation with AI agents",
-				Icon:        "💬",
-			},
-			{
-				Title:       "Workflow",
-				Description: "Select and run cc-wf-studio workflows",
-				Icon:        "📋",
-			},
-			{
 				Title:       "How to Start",
 				Description: "Learn how to setup and use ppopcode",
 				Icon:        "📖",
 			},
 			{
-				Title:       "Settings",
-				Description: "Configure agents and preferences",
-				Icon:        "⚙️",
+				Title:       "Link Accounts",
+				Description: "Setup Claude and Cursor authentication",
+				Icon:        "🔗",
+			},
+			{
+				Title:       "Start with Chat",
+				Description: "Start a conversation with AI agents",
+				Icon:        "💬",
+			},
+			{
+				Title:       "Start with Workflow",
+				Description: "Select and run cc-wf-studio workflows",
+				Icon:        "📋",
+			},
+			{
+				Title:       "About",
+				Description: "Version info and links",
+				Icon:        "ℹ️",
 			},
 		},
 		cursor:   0,
