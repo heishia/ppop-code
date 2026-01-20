@@ -2,7 +2,36 @@
 
 > **[한국어 설치 가이드 보기](README.ko.md)**
 
-Multi-agent AI coding assistant with TUI interface.
+**Multi-agent AI coding assistant with TUI interface.**
+
+---
+
+### Why ppopcode?
+
+**Tired of switching between ChatGPT, Claude, and Cursor?**
+
+ppopcode brings all your AI tools into one terminal. Just say what you want, and it picks the right AI for the job.
+
+---
+
+### Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **One Interface** | Multiple AIs in a single terminal |
+| **Smart Routing** | Auto-selects the best AI for each task |
+| **Cursor Integration** | Code edits handled automatically |
+| **Workflows** | Automate repetitive tasks |
+
+---
+
+### Who is this for?
+
+- Developers tired of copy-pasting between AI tools
+- Cursor subscribers who want to maximize their plan
+- Anyone who prefers a clean, terminal-based workflow
+
+---
 
 ## What is this?
 
@@ -23,6 +52,15 @@ go mod tidy
 go build -o ppopcode ./cmd/ppopcode
 ./ppopcode
 ```
+
+### cc-wf-studio Extension (Optional)
+
+For workflow features, install the cc-wf-studio VSCode extension:
+
+1. Open VSCode/Cursor
+2. Go to Extensions (`Ctrl+Shift+X`)
+3. Search `cc-wf-studio`
+4. Click Install
 
 ### Environment Variables (Optional)
 
