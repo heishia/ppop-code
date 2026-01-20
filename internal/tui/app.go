@@ -12,6 +12,7 @@ type ViewState int
 
 const (
 	ViewMenu ViewState = iota
+	ViewSetup
 	ViewChat
 	ViewWorkflow
 	ViewSettings
@@ -56,6 +57,7 @@ var DefaultKeyMap = KeyMap{
 type App struct {
 	currentView  ViewState
 	menu         *MenuModel
+	setup        *SetupModel
 	chat         *ChatModel
 	workflow     *WorkflowModel
 	width        int
@@ -70,6 +72,7 @@ func NewApp() *App {
 	return &App{
 		currentView: ViewMenu,
 		menu:        NewMenuModel(),
+		setup:       NewSetupModel(),
 		chat:        NewChatModel(),
 		workflow:    NewWorkflowModel(),
 		keys:        DefaultKeyMap,
@@ -81,6 +84,7 @@ func NewAppWithDeps(orch *orchestrator.Orchestrator, sess *session.Manager, cfg 
 	return &App{
 		currentView:  ViewMenu,
 		menu:         NewMenuModel(),
+		setup:        NewSetupModel(),
 		chat:         chat,
 		workflow:     NewWorkflowModel(),
 		keys:         DefaultKeyMap,
@@ -99,6 +103,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		a.width = msg.Width
 		a.height = msg.Height
+		a.setup.SetSize(msg.Width, msg.Height-4)
 		a.chat.SetSize(msg.Width, msg.Height-4)
 		a.workflow.SetSize(msg.Width, msg.Height-4)
 		return a, nil
@@ -130,13 +135,21 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if a.menu.Selected != -1 {
 			switch a.menu.Selected {
 			case 0:
+				a.currentView = ViewSetup
+				return a, a.setup.checkStatus
+			case 1:
 				a.currentView = ViewChat
 				a.chat.Focus()
-			case 1:
+			case 2:
 				a.currentView = ViewWorkflow
 			}
 			a.menu.Selected = -1
 		}
+
+	case ViewSetup:
+		newSetup, setupCmd := a.setup.Update(msg)
+		a.setup = newSetup.(*SetupModel)
+		cmd = setupCmd
 
 	case ViewChat:
 		newChat, chatCmd := a.chat.Update(msg)
@@ -156,6 +169,8 @@ func (a *App) View() string {
 	switch a.currentView {
 	case ViewMenu:
 		return a.menu.View()
+	case ViewSetup:
+		return a.setup.View()
 	case ViewChat:
 		return a.chat.View()
 	case ViewWorkflow:

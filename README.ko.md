@@ -223,20 +223,36 @@ Windows에서는:
 
 이 순서를 매번 말할 필요 없이, 워크플로우 하나만 선택하면 자동으로 진행돼요!
 
-## API 키 설정 (선택사항)
+## 인증 설정
 
-AI 기능을 사용하려면 API 키가 필요해요. 없어도 프로그램은 실행돼요!
+**ppopcode의 "Get Ready" 메뉴에서 인증 상태를 확인하고 설정할 수 있어요!**
+
+### Claude (필수)
+
+Claude Code 구독이 필요해요. API 키가 아닌 구독 계정으로 로그인해요.
+
+```bash
+claude login
+```
+
+터미널에서 위 명령어를 실행하면 브라우저가 열리고 로그인할 수 있어요.
+
+### Cursor (코드 수정 기능 필수)
+
+Cursor IDE를 열고 구독 계정으로 로그인하세요.
+
+### API 키 (선택사항)
+
+GPT나 Gemini 에이전트를 사용하려면 API 키가 필요해요.
 
 **Windows (PowerShell):**
 ```powershell
-$env:ANTHROPIC_API_KEY="여기에-클로드-API키"
 $env:OPENAI_API_KEY="여기에-OpenAI-API키"
 $env:GOOGLE_API_KEY="여기에-구글-API키"
 ```
 
 **Mac/Linux:**
 ```bash
-export ANTHROPIC_API_KEY="여기에-클로드-API키"
 export OPENAI_API_KEY="여기에-OpenAI-API키"
 export GOOGLE_API_KEY="여기에-구글-API키"
 ```
@@ -247,6 +263,7 @@ export GOOGLE_API_KEY="여기에-구글-API키"
 
 프로그램을 실행하면 메뉴가 나와요:
 
+- **Get Ready**: Claude와 Cursor 인증 상태 확인 및 설정
 - **Chat**: AI와 대화하면서 코딩하기
 - **Workflow**: 미리 만든 작업 흐름 실행하기
 - **Settings**: 설정 바꾸기

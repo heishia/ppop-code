@@ -62,7 +62,9 @@ ppopcode combines multiple AI models (Claude, GPT, Gemini) into a single termina
 
 ### Prerequisites
 - Go 1.21+
-- (Optional) Cursor for code editing
+- **Claude Code subscription** - Run `claude login` to authenticate
+- **Cursor subscription** - For code editing features
+- (Optional) OpenAI/Google API keys for GPT/Gemini agents
 
 ### Installation
 
@@ -123,12 +125,23 @@ For workflow features, install the cc-wf-studio VSCode extension:
 3. Search `cc-wf-studio`
 4. Click Install
 
-### Environment Variables (Optional)
+### Authentication Setup
 
+**Use the "Get Ready" menu in ppopcode to check and setup authentication.**
+
+**Claude (Required)**
 ```bash
-export ANTHROPIC_API_KEY="your-key"
-export OPENAI_API_KEY="your-key"
-export GOOGLE_API_KEY="your-key"
+# Login with your Claude Code subscription
+claude login
+```
+
+**Cursor (Required for code editing)**
+- Open Cursor IDE and sign in with your subscription
+
+**Optional API Keys (for GPT/Gemini agents)**
+```bash
+export OPENAI_API_KEY="your-key"    # For GPT agent
+export GOOGLE_API_KEY="your-key"    # For Gemini agent
 ```
 
 ## How It Works

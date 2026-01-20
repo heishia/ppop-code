@@ -13,9 +13,9 @@ import (
 )
 
 type Bridge struct {
-	workDir   string
-	timeout   time.Duration
-	maxRetry  int
+	workDir  string
+	timeout  time.Duration
+	maxRetry int
 }
 
 type EditRequest struct {
@@ -25,10 +25,18 @@ type EditRequest struct {
 }
 
 type EditResult struct {
-	Success   bool
-	Output    string
-	Error     error
-	Duration  time.Duration
+	Success  bool
+	Output   string
+	Error    error
+	Duration time.Duration
+}
+
+// CursorLoginStatus represents the login/availability status of Cursor
+type CursorLoginStatus struct {
+	Available bool
+	Message   string
+	CLIFound  bool
+	IDEFound  bool
 }
 
 func NewBridge(workDir string) *Bridge {
@@ -236,4 +244,142 @@ func (b *Bridge) ExecuteWithScript(ctx context.Context, req EditRequest) *EditRe
 		Output:   stdout.String(),
 		Duration: time.Since(start),
 	}
+}
+
+// CheckCursorLogin checks if Cursor is available and ready to use
+func CheckCursorLogin() CursorLoginStatus {
+	status := CursorLoginStatus{
+		Available: false,
+		CLIFound:  false,
+		IDEFound:  false,
+	}
+
+	// Check for cursor CLI
+	cliPath := findCursorCLI()
+	if cliPath != "" {
+		status.CLIFound = true
+	}
+
+	// Check for cursor-agent
+	agentPath := findCursorAgent()
+	if agentPath != "" {
+		status.IDEFound = true
+	}
+
+	// Determine overall status
+	if status.CLIFound || status.IDEFound {
+		status.Available = true
+		if status.CLIFound && status.IDEFound {
+			status.Message = "Cursor CLI and IDE agent ready"
+		} else if status.CLIFound {
+			status.Message = "Cursor CLI ready"
+		} else {
+			status.Message = "Cursor IDE agent ready"
+		}
+	} else {
+		status.Message = "Cursor not found. Please install Cursor IDE from https://cursor.sh"
+	}
+
+	return status
+}
+
+// OpenCursorLogin opens Cursor IDE for the user to login
+func OpenCursorLogin() error {
+	var cmd *exec.Cmd
+
+	if runtime.GOOS == "windows" {
+		// Try to open Cursor IDE on Windows
+		possiblePaths := []string{
+			filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "cursor", "Cursor.exe"),
+			"cursor",
+		}
+
+		for _, p := range possiblePaths {
+			if _, err := os.Stat(p); err == nil {
+				cmd = exec.Command(p)
+				break
+			}
+			if path, err := exec.LookPath(p); err == nil {
+				cmd = exec.Command(path)
+				break
+			}
+		}
+	} else if runtime.GOOS == "darwin" {
+		cmd = exec.Command("open", "-a", "Cursor")
+	} else {
+		// Linux
+		if path, err := exec.LookPath("cursor"); err == nil {
+			cmd = exec.Command(path)
+		}
+	}
+
+	if cmd == nil {
+		return fmt.Errorf("cursor not found")
+	}
+
+	return cmd.Start()
+}
+
+// findCursorCLI finds the cursor CLI executable
+func findCursorCLI() string {
+	if runtime.GOOS == "windows" {
+		possiblePaths := []string{
+			"cursor",
+			"cursor.exe",
+		}
+
+		for _, p := range possiblePaths {
+			if path, err := exec.LookPath(p); err == nil {
+				return path
+			}
+		}
+	} else {
+		possiblePaths := []string{
+			"cursor",
+			"/usr/local/bin/cursor",
+			"/usr/bin/cursor",
+		}
+
+		for _, p := range possiblePaths {
+			if path, err := exec.LookPath(p); err == nil {
+				return path
+			}
+		}
+	}
+
+	return ""
+}
+
+// findCursorAgent finds the cursor-agent executable
+func findCursorAgent() string {
+	if runtime.GOOS == "windows" {
+		possiblePaths := []string{
+			"cursor-agent",
+			"cursor-agent.exe",
+			filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "cursor", "resources", "app", "bin", "cursor-agent.exe"),
+		}
+
+		for _, p := range possiblePaths {
+			if _, err := exec.LookPath(p); err == nil {
+				return p
+			}
+			if _, err := os.Stat(p); err == nil {
+				return p
+			}
+		}
+	} else {
+		possiblePaths := []string{
+			"cursor-agent",
+			"/usr/local/bin/cursor-agent",
+			filepath.Join(os.Getenv("HOME"), ".cursor", "bin", "cursor-agent"),
+		}
+
+		for _, p := range possiblePaths {
+			if _, err := exec.LookPath(p); err == nil {
+				return p
+			}
+		}
+	}
+
+	return ""
 }

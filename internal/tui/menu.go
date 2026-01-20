@@ -27,6 +27,11 @@ func NewMenuModel() *MenuModel {
 	return &MenuModel{
 		items: []MenuItem{
 			{
+				Title:       "Get Ready",
+				Description: "Setup Claude and Cursor authentication",
+				Icon:        "🚀",
+			},
+			{
 				Title:       "Chat",
 				Description: "Start a conversation with AI agents",
 				Icon:        "💬",

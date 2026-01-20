@@ -3,35 +3,45 @@ app:
   version: 1.0.0
   debug: false
 
+# Authentication:
+# - Claude agents use 'claude' CLI with subscription login (run 'claude login' first)
+# - Gemini/GPT agents still require API keys via environment variables
+# - Cursor uses subscription-based authentication via Cursor IDE login
+
 agents:
   orchestrator:
     type: claude
     model: claude-opus-4-20250514
     role: Main orchestrator - analyzes tasks and routes to appropriate agents
     max_tokens: 4096
+    # Uses claude CLI subscription (no API key needed)
 
   gemini:
     type: gemini
     model: gemini-2.0-flash
     role: Frontend specialist - UX/UI development
     max_tokens: 4096
+    # Requires GOOGLE_API_KEY environment variable
 
   gpt:
     type: openai
     model: gpt-4o
     role: Design & debugging specialist
     max_tokens: 4096
+    # Requires OPENAI_API_KEY environment variable
 
   sonnet:
     type: claude
     model: claude-sonnet-4-20250514
     role: General coding tasks
     max_tokens: 4096
+    # Uses claude CLI subscription (no API key needed)
 
 cursor:
   command: cursor-agent
   timeout: 300
   max_retry: 2
+  # Uses Cursor IDE subscription (login via Cursor IDE)
 
 session:
   save_history: true
