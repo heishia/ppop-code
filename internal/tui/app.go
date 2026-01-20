@@ -120,6 +120,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return a, tea.Quit
 			}
 			a.currentView = ViewMenu
+			a.menu.Selected = -1 // Reset menu selection
 			return a, nil
 
 		case key.Matches(msg, a.keys.Back):
