@@ -12,6 +12,7 @@ type ViewState int
 
 const (
 	ViewMenu ViewState = iota
+	ViewHowTo
 	ViewSetup
 	ViewChat
 	ViewWorkflow
@@ -19,12 +20,12 @@ const (
 )
 
 type KeyMap struct {
-	Quit   key.Binding
-	Back   key.Binding
-	Enter  key.Binding
-	Up     key.Binding
-	Down   key.Binding
-	Help   key.Binding
+	Quit  key.Binding
+	Back  key.Binding
+	Enter key.Binding
+	Up    key.Binding
+	Down  key.Binding
+	Help  key.Binding
 }
 
 var DefaultKeyMap = KeyMap{
@@ -57,6 +58,7 @@ var DefaultKeyMap = KeyMap{
 type App struct {
 	currentView  ViewState
 	menu         *MenuModel
+	howto        *HowToModel
 	setup        *SetupModel
 	chat         *ChatModel
 	workflow     *WorkflowModel
@@ -72,6 +74,7 @@ func NewApp() *App {
 	return &App{
 		currentView: ViewMenu,
 		menu:        NewMenuModel(),
+		howto:       NewHowToModel(),
 		setup:       NewSetupModel(),
 		chat:        NewChatModel(),
 		workflow:    NewWorkflowModel(),
@@ -84,6 +87,7 @@ func NewAppWithDeps(orch *orchestrator.Orchestrator, sess *session.Manager, cfg 
 	return &App{
 		currentView:  ViewMenu,
 		menu:         NewMenuModel(),
+		howto:        NewHowToModel(),
 		setup:        NewSetupModel(),
 		chat:         chat,
 		workflow:     NewWorkflowModel(),
@@ -103,6 +107,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		a.width = msg.Width
 		a.height = msg.Height
+		a.howto.SetSize(msg.Width, msg.Height-4)
 		a.setup.SetSize(msg.Width, msg.Height-4)
 		a.chat.SetSize(msg.Width, msg.Height-4)
 		a.workflow.SetSize(msg.Width, msg.Height-4)
@@ -135,16 +140,23 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if a.menu.Selected != -1 {
 			switch a.menu.Selected {
 			case 0:
+				a.currentView = ViewHowTo
+			case 1:
 				a.currentView = ViewSetup
 				return a, a.setup.checkStatus
-			case 1:
+			case 2:
 				a.currentView = ViewChat
 				a.chat.Focus()
-			case 2:
+			case 3:
 				a.currentView = ViewWorkflow
 			}
 			a.menu.Selected = -1
 		}
+
+	case ViewHowTo:
+		newHowTo, howtoCmd := a.howto.Update(msg)
+		a.howto = newHowTo.(*HowToModel)
+		cmd = howtoCmd
 
 	case ViewSetup:
 		newSetup, setupCmd := a.setup.Update(msg)
@@ -169,6 +181,8 @@ func (a *App) View() string {
 	switch a.currentView {
 	case ViewMenu:
 		return a.menu.View()
+	case ViewHowTo:
+		return a.howto.View()
 	case ViewSetup:
 		return a.setup.View()
 	case ViewChat:

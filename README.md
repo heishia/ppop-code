@@ -127,7 +127,7 @@ For workflow features, install the cc-wf-studio VSCode extension:
 
 ### Authentication Setup
 
-**Use the "Get Ready" menu in ppopcode to check and setup authentication.**
+**Use the "Link Accounts" menu in ppopcode to check and setup authentication.**
 
 **Claude (Required)**
 ```bash

@@ -27,9 +27,14 @@ func NewMenuModel() *MenuModel {
 	return &MenuModel{
 		items: []MenuItem{
 			{
-				Title:       "Get Ready",
+				Title:       "How to Start",
+				Description: "Learn how to setup and use ppopcode",
+				Icon:        "📖",
+			},
+			{
+				Title:       "Link Accounts",
 				Description: "Setup Claude and Cursor authentication",
-				Icon:        "🚀",
+				Icon:        "🔗",
 			},
 			{
 				Title:       "Chat",

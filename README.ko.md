@@ -225,7 +225,7 @@ Windows에서는:
 
 ## 인증 설정
 
-**ppopcode의 "Get Ready" 메뉴에서 인증 상태를 확인하고 설정할 수 있어요!**
+**ppopcode의 "Link Accounts" 메뉴에서 인증 상태를 확인하고 설정할 수 있어요!**
 
 ### Claude (필수)
 
@@ -263,7 +263,7 @@ export GOOGLE_API_KEY="여기에-구글-API키"
 
 프로그램을 실행하면 메뉴가 나와요:
 
-- **Get Ready**: Claude와 Cursor 인증 상태 확인 및 설정
+- **Link Accounts**: Claude와 Cursor 인증 상태 확인 및 설정
 - **Chat**: AI와 대화하면서 코딩하기
 - **Workflow**: 미리 만든 작업 흐름 실행하기
 - **Settings**: 설정 바꾸기

@@ -184,7 +184,7 @@ func (m *SetupModel) View() string {
 	var b strings.Builder
 
 	// Title
-	title := titleStyle.Render("🚀 Get Ready")
+	title := titleStyle.Render("🔗 Link Accounts")
 	b.WriteString(title)
 	b.WriteString("\n\n")
 
