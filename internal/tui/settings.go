@@ -12,23 +12,27 @@ import (
 
 // Available models for each agent type
 var claudeModels = []string{
-	"claude-sonnet-4-5-20250514",
+	"claude-opus-4-5-20251101",
+	"claude-sonnet-4-5-20250929",
+	"claude-haiku-4-5-20251001",
+	"claude-opus-4-1-20250801",
 	"claude-sonnet-4-20250514",
-	"claude-opus-4-20250514",
 }
 
 var openaiModels = []string{
-	"gpt-4o",
-	"gpt-4o-mini",
-	"gpt-4-turbo",
-	"o1",
-	"o1-mini",
+	"gpt-5.2",
+	"gpt-5.2-mini",
+	"gpt-5",
+	"gpt-5-mini",
+	"o3",
+	"o4-mini",
 }
 
 var geminiModels = []string{
-	"gemini-2.0-flash",
-	"gemini-1.5-pro",
-	"gemini-1.5-flash",
+	"gemini-3-pro",
+	"gemini-3-flash",
+	"gemini-2.5-pro",
+	"gemini-2.5-flash",
 }
 
 type AgentSetting struct {
