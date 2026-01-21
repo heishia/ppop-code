@@ -16,6 +16,7 @@ const (
 	ViewSetup
 	ViewChat
 	ViewWorkflow
+	ViewWorkflowRun
 	ViewSettings
 	ViewAbout
 )
@@ -63,6 +64,7 @@ type App struct {
 	setup        *SetupModel
 	chat         *ChatModel
 	workflow     *WorkflowModel
+	workflowRun  *WorkflowRunModel
 	settings     *SettingsModel
 	about        *AboutModel
 	width        int
@@ -121,6 +123,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.setup.SetSize(msg.Width, msg.Height-4)
 		a.chat.SetSize(msg.Width, msg.Height-4)
 		a.workflow.SetSize(msg.Width, msg.Height-4)
+		if a.workflowRun != nil {
+			a.workflowRun.SetSize(msg.Width, msg.Height-4)
+		}
 		a.settings.SetSize(msg.Width, msg.Height-4)
 		a.about.SetSize(msg.Width, msg.Height-4)
 		return a, nil
@@ -136,6 +141,14 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.workflow.CloseSubView()
 				return a, nil
 			}
+			// Handle workflow run - cancel if running
+			if a.currentView == ViewWorkflowRun && a.workflowRun != nil {
+				if a.workflowRun.IsRunning() {
+					a.workflowRun.Cancel()
+				}
+				a.currentView = ViewWorkflow
+				return a, nil
+			}
 			a.currentView = ViewMenu
 			a.menu.Selected = -1 // Reset menu selection
 			return a, nil
@@ -147,10 +160,37 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					a.workflow.CloseSubView()
 					return a, nil
 				}
+				// Handle workflow run - go back to workflow list
+				if a.currentView == ViewWorkflowRun && a.workflowRun != nil {
+					if a.workflowRun.IsRunning() {
+						a.workflowRun.Cancel()
+					}
+					a.currentView = ViewWorkflow
+					return a, nil
+				}
 				a.currentView = ViewMenu
 				a.menu.Selected = -1 // Reset menu selection
 				return a, nil
 			}
+		}
+
+	case WorkflowLoadedMsg:
+		// Handle workflow loaded - create run model and switch view
+		if msg.Error != nil {
+			// TODO: Show error in workflow view
+			return a, nil
+		}
+		a.workflowRun = NewWorkflowRunModel(msg.Workflow, a.orchestrator)
+		a.workflowRun.SetSize(a.width, a.height-4)
+		a.currentView = ViewWorkflowRun
+		return a, a.workflowRun.Init()
+
+	case ExecutionProgressMsg:
+		// Forward execution progress to workflow run
+		if a.currentView == ViewWorkflowRun && a.workflowRun != nil {
+			newWfRun, wfRunCmd := a.workflowRun.Update(msg)
+			a.workflowRun = newWfRun.(*WorkflowRunModel)
+			return a, wfRunCmd
 		}
 
 	case StreamUpdateMsg:
@@ -210,6 +250,18 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.workflow = newWorkflow.(*WorkflowModel)
 		cmd = wfCmd
 
+	case ViewWorkflowRun:
+		if a.workflowRun != nil {
+			newWfRun, wfRunCmd := a.workflowRun.Update(msg)
+			a.workflowRun = newWfRun.(*WorkflowRunModel)
+			cmd = wfRunCmd
+
+			// If workflow run completed and user pressed back, return to workflow list
+			if !a.workflowRun.IsRunning() && a.workflowRun.IsCompleted() {
+				// Stay in workflow run view to show results
+			}
+		}
+
 	case ViewSettings:
 		newSettings, settingsCmd := a.settings.Update(msg)
 		a.settings = newSettings.(*SettingsModel)
@@ -235,6 +287,11 @@ func (a *App) View() string {
 	case ViewChat:
 		return a.chat.View()
 	case ViewWorkflow:
+		return a.workflow.View()
+	case ViewWorkflowRun:
+		if a.workflowRun != nil {
+			return a.workflowRun.View()
+		}
 		return a.workflow.View()
 	case ViewSettings:
 		return a.settings.View()

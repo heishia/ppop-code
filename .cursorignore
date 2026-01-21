@@ -1,3 +1,4 @@
+/cc-wf-studio
 # Environment
 .env
 .env.local
@@ -24,5 +25,3 @@ ppopcode-*
 
 # Documentation (local only)
 docs/
-cc-wf-studio/
-cursorignore/

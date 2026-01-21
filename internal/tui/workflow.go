@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,6 +13,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ppopcode/ppopcode/internal/workflow"
 )
 
 // WorkflowItemType distinguishes special items from regular workflow files
@@ -178,12 +180,12 @@ func (m *WorkflowModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if item.itemType == WorkflowTypeMakeNew {
 					// Check if WF Studio is installed
 					m.wfStudioInstall = checkWFStudioInstalled()
+					// Always show WF Studio page (for install guide or keybinding setup)
+					m.showWFStudio = true
 					if m.wfStudioInstall {
-						// Already installed - launch directly
+						// Register keybinding
 						return m, m.launchWFStudio()
 					}
-					// Not installed - show install page
-					m.showWFStudio = true
 					return m, nil
 				}
 				m.selected = item.path
@@ -200,9 +202,10 @@ func (m *WorkflowModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 type WorkflowLoadedMsg struct {
-	Name string
-	Path string
-	Data map[string]interface{}
+	Name     string
+	Path     string
+	Workflow *workflow.Workflow
+	Error    error
 }
 
 type WFStudioLaunchMsg struct {
@@ -217,26 +220,74 @@ type WFStudioInstallPageMsg struct {
 
 func (m *WorkflowModel) loadWorkflow(path string) tea.Cmd {
 	return func() tea.Msg {
+		// Get the directory and filename
+		dir := filepath.Dir(path)
+		name := filepath.Base(path)
+
+		// Create loader and load workflow
+		loader := workflow.NewLoader(dir)
+		wf, err := loader.Load(name)
+
+		if err != nil {
+			return WorkflowLoadedMsg{
+				Path:  path,
+				Error: err,
+			}
+		}
+
 		return WorkflowLoadedMsg{
-			Path: path,
+			Name:     wf.Name,
+			Path:     path,
+			Workflow: wf,
 		}
 	}
 }
 
 func (m *WorkflowModel) launchWFStudio() tea.Cmd {
 	return func() tea.Msg {
-		// Open CC WF Studio in current Cursor window (reuse existing window)
-		var cmd *exec.Cmd
+		// Register Ctrl+Shift+W keybinding for CC WF Studio in Cursor user settings
+		var keybindingsPath string
 		switch runtime.GOOS {
 		case "windows":
-			cmd = exec.Command("cmd", "/c", "cursor", "--reuse-window", "--command", "cc-wf-studio.openEditor")
+			keybindingsPath = filepath.Join(os.Getenv("APPDATA"), "Cursor", "User", "keybindings.json")
 		case "darwin":
-			cmd = exec.Command("cursor", "--reuse-window", "--command", "cc-wf-studio.openEditor")
+			keybindingsPath = filepath.Join(os.Getenv("HOME"), "Library", "Application Support", "Cursor", "User", "keybindings.json")
 		default:
-			cmd = exec.Command("cursor", "--reuse-window", "--command", "cc-wf-studio.openEditor")
+			keybindingsPath = filepath.Join(os.Getenv("HOME"), ".config", "Cursor", "User", "keybindings.json")
 		}
-		err := cmd.Start()
-		return WFStudioLaunchMsg{Success: err == nil, Error: err}
+
+		// Read existing keybindings
+		var keybindings []map[string]interface{}
+		if data, err := os.ReadFile(keybindingsPath); err == nil {
+			json.Unmarshal(data, &keybindings)
+		}
+
+		// Check if keybinding already exists
+		keybindingExists := false
+		for _, kb := range keybindings {
+			if cmd, ok := kb["command"].(string); ok && cmd == "cc-wf-studio.openEditor" {
+				keybindingExists = true
+				break
+			}
+		}
+
+		// Add keybinding if not present
+		if !keybindingExists {
+			newKeybinding := map[string]interface{}{
+				"key":     "ctrl+shift+w",
+				"command": "cc-wf-studio.openEditor",
+			}
+			keybindings = append(keybindings, newKeybinding)
+
+			// Ensure directory exists
+			os.MkdirAll(filepath.Dir(keybindingsPath), 0755)
+
+			// Write updated keybindings
+			keybindingsData, _ := json.MarshalIndent(keybindings, "", "  ")
+			os.WriteFile(keybindingsPath, keybindingsData, 0644)
+		}
+
+		return WFStudioLaunchMsg{Success: true, Error: nil}
 	}
 }
 
@@ -295,18 +346,28 @@ func (m *WorkflowModel) viewWFStudio() string {
 		Width(60)
 
 	if m.wfStudioInstall {
-		// Installed - show launch page
+		// Installed - show keybinding guide
 		b.WriteString(titleStyle.Render("🎨 CC WF Studio"))
 		b.WriteString("\n\n")
 
 		content := `CC WF Studio extension is installed!
 
-Visual workflow editor for Claude Code Slash Commands,
-Sub Agents, Agent Skills, and MCP Tools.
+Keybinding registered: Ctrl+Shift+W
 
-Press Enter to open in Cursor.`
+Press the shortcut in Cursor to open the Workflow Editor.
+(You may need to reload Cursor window once)`
 
 		b.WriteString(boxStyle.Render(content))
+		b.WriteString("\n\n")
+
+		// Keybinding highlight
+		keybindStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#00FFFF")).
+			Bold(true).
+			Background(lipgloss.Color("#333333")).
+			Padding(0, 1)
+		b.WriteString("Shortcut: ")
+		b.WriteString(keybindStyle.Render("Ctrl+Shift+W"))
 		b.WriteString("\n\n")
 
 		statusStyle := lipgloss.NewStyle().
@@ -315,7 +376,7 @@ Press Enter to open in Cursor.`
 		b.WriteString(statusStyle.Render("● Installed (Cursor Extension)"))
 		b.WriteString("\n\n")
 
-		help := helpStyle.Render("enter: open in Cursor • esc: back")
+		help := helpStyle.Render("esc: back")
 		b.WriteString(help)
 	} else {
 		// Not installed - show install page
