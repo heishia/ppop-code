@@ -225,16 +225,15 @@ func (m *WorkflowModel) loadWorkflow(path string) tea.Cmd {
 
 func (m *WorkflowModel) launchWFStudio() tea.Cmd {
 	return func() tea.Msg {
-		// Open Cursor/VSCode with the cc-wf-studio command
+		// Open CC WF Studio in current Cursor window (reuse existing window)
 		var cmd *exec.Cmd
 		switch runtime.GOOS {
 		case "windows":
-			// Try cursor first, fallback to code
-			cmd = exec.Command("cmd", "/c", "cursor", "--command", "cc-wf-studio.openWorkflowEditor")
+			cmd = exec.Command("cmd", "/c", "cursor", "--reuse-window", "--command", "cc-wf-studio.openWorkflowEditor")
 		case "darwin":
-			cmd = exec.Command("cursor", "--command", "cc-wf-studio.openWorkflowEditor")
+			cmd = exec.Command("cursor", "--reuse-window", "--command", "cc-wf-studio.openWorkflowEditor")
 		default:
-			cmd = exec.Command("cursor", "--command", "cc-wf-studio.openWorkflowEditor")
+			cmd = exec.Command("cursor", "--reuse-window", "--command", "cc-wf-studio.openWorkflowEditor")
 		}
 		err := cmd.Start()
 		return WFStudioLaunchMsg{Success: err == nil, Error: err}
