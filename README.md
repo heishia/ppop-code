@@ -68,51 +68,53 @@ ppopcode combines multiple AI models (Claude, GPT, Gemini) into a single termina
 
 ### Installation
 
-**Quick Install (Recommended)**
+**Global Install (Recommended)**
+
+Install once, use anywhere!
 
 ```bash
-# 1. Clone the repository
+# Clone and install
 git clone https://github.com/ppopcode/ppopcode.git
 cd ppopcode
-
-# 2. Build and install (if you have make)
 make install
+```
 
-# Or manually:
-# Build the binary
-go mod tidy
-go build -o ppopcode ./cmd/ppopcode
+That's it! Now you can run `ppopcode` from any directory.
 
-# Install globally (Linux/Mac)
-chmod +x scripts/install.sh
-./scripts/install.sh
+**Windows (PowerShell)**
+```powershell
+git clone https://github.com/ppopcode/ppopcode.git
+cd ppopcode
+make install
+# Or manually: .\scripts\install.ps1
+```
 
-# Or on Windows (PowerShell)
-.\scripts\install.ps1
+### Running ppopcode
 
-# 3. Use from anywhere!
+After global installation:
+```bash
+# Run from anywhere!
 ppopcode
 ```
 
-**Manual Installation**
-
-If you prefer to run without installing:
-
+For local development:
 ```bash
-git clone https://github.com/ppopcode/ppopcode.git
-cd ppopcode
-go mod tidy
-go build -o ppopcode ./cmd/ppopcode
-./ppopcode
+# Build and run in one command
+make run
+
+# Or run the binary directly
+./ppopcode        # Linux/Mac
+.\ppopcode.exe    # Windows
 ```
 
-**Uninstall**
+### Uninstall
 
 ```bash
 # Linux/Mac
-./scripts/install.sh uninstall
+make uninstall
+# Or: ./scripts/install.sh uninstall
 
-# Windows
+# Windows (PowerShell)
 .\scripts\install.ps1 -Uninstall
 ```
 

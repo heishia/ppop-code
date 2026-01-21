@@ -91,97 +91,53 @@ go version
 ```
 버전이 나오면 성공!
 
-### 2단계: ppopcode 다운로드
+### 2단계: 전역 설치 (권장)
 
+한 번 설치하면 어디서든 사용할 수 있어요!
+
+**Linux/Mac:**
 ```bash
 git clone https://github.com/ppopcode/ppopcode.git
 cd ppopcode
-```
-
-### 3단계: 빌드하기
-
-**make가 있으면 (간편):**
-```bash
-make build
-```
-
-**make가 없으면:**
-```bash
-go mod tidy
-go build -o ppopcode ./cmd/ppopcode
-```
-
-Windows에서는:
-```powershell
-go mod tidy
-go build -o ppopcode.exe ./cmd/ppopcode
-```
-
-### 4단계: 전역 설치하기 (권장)
-
-어디서든 `ppopcode` 명령어를 사용할 수 있게 설치해요.
-
-**make가 있으면 (간편):**
-```bash
 make install
 ```
 
-**make가 없으면:**
-
-Linux/Mac:
-```bash
-chmod +x scripts/install.sh
-./scripts/install.sh
-```
-
-Windows (PowerShell):
+**Windows (PowerShell):**
 ```powershell
-.\scripts\install.ps1
+git clone https://github.com/ppopcode/ppopcode.git
+cd ppopcode
+make install
+# 또는: .\scripts\install.ps1
 ```
 
-설치가 끝나면 새 터미널을 열고:
+설치 완료! 이제 어디서든 `ppopcode` 명령어로 실행할 수 있어요.
+
+### 실행하기
+
+**전역 설치 후 (권장):**
 ```bash
+# 어느 폴더에서든 실행!
 ppopcode
 ```
 
-**현재 터미널에서 바로 사용하려면:**
-
-Linux/Mac:
+**개발용 로컬 실행:**
 ```bash
-export PATH="$PATH:$HOME/bin"
-ppopcode
-```
+# 빌드하고 바로 실행
+make run
 
-Windows (PowerShell):
-```powershell
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-ppopcode
-```
-
-### 4단계 (대안): 설치 없이 실행하기
-
-전역 설치를 원하지 않으면 프로젝트 폴더에서 직접 실행할 수 있어요.
-
-```bash
-./ppopcode
-```
-
-Windows에서는:
-```powershell
-.\ppopcode.exe
+# 또는 직접 실행
+./ppopcode        # Linux/Mac
+.\ppopcode.exe    # Windows
 ```
 
 ### 제거하기
 
-더 이상 사용하지 않으면 제거할 수 있어요.
-
-**Linux/Mac:**
 ```bash
-./scripts/install.sh uninstall
-```
+# Linux/Mac
+make uninstall
+# 또는: ./scripts/install.sh uninstall
 
-**Windows:**
-```powershell
+# Windows (PowerShell)
 .\scripts\install.ps1 -Uninstall
 ```
 
