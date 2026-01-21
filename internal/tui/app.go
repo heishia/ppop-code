@@ -131,12 +131,22 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if a.currentView == ViewMenu {
 				return a, tea.Quit
 			}
+			// Check if current view has sub-view first
+			if a.currentView == ViewWorkflow && a.workflow.HasSubView() {
+				a.workflow.CloseSubView()
+				return a, nil
+			}
 			a.currentView = ViewMenu
 			a.menu.Selected = -1 // Reset menu selection
 			return a, nil
 
 		case key.Matches(msg, a.keys.Back):
 			if a.currentView != ViewMenu {
+				// Check if current view has sub-view first
+				if a.currentView == ViewWorkflow && a.workflow.HasSubView() {
+					a.workflow.CloseSubView()
+					return a, nil
+				}
 				a.currentView = ViewMenu
 				a.menu.Selected = -1 // Reset menu selection
 				return a, nil
@@ -171,6 +181,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.chat.Focus()
 			case 3: // Start with Workflow
 				a.currentView = ViewWorkflow
+				a.workflow.Reset() // Reset state when entering
 			case 4: // Settings
 				a.currentView = ViewSettings
 			case 5: // About

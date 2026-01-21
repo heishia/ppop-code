@@ -128,6 +128,22 @@ func (m *WorkflowModel) SetSize(width, height int) {
 	m.list.SetSize(width-4, height-6)
 }
 
+// HasSubView returns true if workflow is showing a sub-view (like WF Studio page)
+func (m *WorkflowModel) HasSubView() bool {
+	return m.showWFStudio
+}
+
+// CloseSubView closes the current sub-view and returns to workflow list
+func (m *WorkflowModel) CloseSubView() {
+	m.showWFStudio = false
+}
+
+// Reset resets the workflow model state (called when entering from menu)
+func (m *WorkflowModel) Reset() {
+	m.showWFStudio = false
+	m.selected = ""
+}
+
 func (m *WorkflowModel) Init() tea.Cmd {
 	return nil
 }
@@ -160,9 +176,14 @@ func (m *WorkflowModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, DefaultKeyMap.Enter):
 			if item, ok := m.list.SelectedItem().(WorkflowItem); ok {
 				if item.itemType == WorkflowTypeMakeNew {
-					// Show WF Studio page
-					m.showWFStudio = true
+					// Check if WF Studio is installed
 					m.wfStudioInstall = checkWFStudioInstalled()
+					if m.wfStudioInstall {
+						// Already installed - launch directly
+						return m, m.launchWFStudio()
+					}
+					// Not installed - show install page
+					m.showWFStudio = true
 					return m, nil
 				}
 				m.selected = item.path
