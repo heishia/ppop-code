@@ -25,7 +25,7 @@ func TestDefaultConfig(t *testing.T) {
 	}
 
 	// Check agents are defined
-	expectedAgents := []string{"orchestrator", "gemini", "gpt", "sonnet"}
+	expectedAgents := []string{"sonnet"}
 	for _, name := range expectedAgents {
 		if _, exists := config.Agents[name]; !exists {
 			t.Errorf("Missing agent: %s", name)
@@ -116,43 +116,23 @@ func TestToAgentConfigs(t *testing.T) {
 	if sonnet.Name != "sonnet" {
 		t.Errorf("sonnet.Name = %q, want %q", sonnet.Name, "sonnet")
 	}
-
-	// Check gemini agent
-	gemini, exists := agentConfigs["gemini"]
-	if !exists {
-		t.Fatal("gemini agent config should exist")
-	}
-
-	if gemini.Type != agents.AgentTypeGemini {
-		t.Errorf("gemini.Type = %v, want %v", gemini.Type, agents.AgentTypeGemini)
-	}
-
-	// Check gpt agent
-	gpt, exists := agentConfigs["gpt"]
-	if !exists {
-		t.Fatal("gpt agent config should exist")
-	}
-
-	if gpt.Type != agents.AgentTypeOpenAI {
-		t.Errorf("gpt.Type = %v, want %v", gpt.Type, agents.AgentTypeOpenAI)
-	}
 }
 
 func TestAgentConfigFields(t *testing.T) {
 	config := DefaultConfig()
 
-	// Test orchestrator config
-	orch := config.Agents["orchestrator"]
-	if orch.Type != "claude" {
-		t.Errorf("orchestrator.Type = %q, want %q", orch.Type, "claude")
+	// Test sonnet config
+	sonnet := config.Agents["sonnet"]
+	if sonnet.Type != "claude" {
+		t.Errorf("sonnet.Type = %q, want %q", sonnet.Type, "claude")
 	}
 
-	if orch.MaxTokens != 4096 {
-		t.Errorf("orchestrator.MaxTokens = %d, want %d", orch.MaxTokens, 4096)
+	if sonnet.MaxTokens != 4096 {
+		t.Errorf("sonnet.MaxTokens = %d, want %d", sonnet.MaxTokens, 4096)
 	}
 
-	if orch.Role == "" {
-		t.Error("orchestrator.Role should not be empty")
+	if sonnet.Role == "" {
+		t.Error("sonnet.Role should not be empty")
 	}
 }
 

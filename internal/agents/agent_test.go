@@ -7,8 +7,6 @@ import (
 func TestAgentTypes(t *testing.T) {
 	types := []AgentType{
 		AgentTypeClaude,
-		AgentTypeOpenAI,
-		AgentTypeGemini,
 	}
 
 	for _, agentType := range types {
@@ -20,12 +18,6 @@ func TestAgentTypes(t *testing.T) {
 	// Verify expected values
 	if AgentTypeClaude != "claude" {
 		t.Errorf("AgentTypeClaude = %q, want %q", AgentTypeClaude, "claude")
-	}
-	if AgentTypeOpenAI != "openai" {
-		t.Errorf("AgentTypeOpenAI = %q, want %q", AgentTypeOpenAI, "openai")
-	}
-	if AgentTypeGemini != "gemini" {
-		t.Errorf("AgentTypeGemini = %q, want %q", AgentTypeGemini, "gemini")
 	}
 }
 
@@ -63,48 +55,6 @@ func TestNewAgentClaude(t *testing.T) {
 
 	if agent.Model() != "claude-sonnet" {
 		t.Errorf("agent.Model() = %q, want %q", agent.Model(), "claude-sonnet")
-	}
-}
-
-func TestNewAgentOpenAI(t *testing.T) {
-	config := AgentConfig{
-		Name:  "test-openai",
-		Type:  AgentTypeOpenAI,
-		Model: "gpt-4",
-	}
-
-	agent, err := NewAgent(config)
-	if err != nil {
-		t.Fatalf("NewAgent(openai) error: %v", err)
-	}
-
-	if agent == nil {
-		t.Fatal("NewAgent(openai) should not return nil")
-	}
-
-	if agent.Name() != "test-openai" {
-		t.Errorf("agent.Name() = %q, want %q", agent.Name(), "test-openai")
-	}
-}
-
-func TestNewAgentGemini(t *testing.T) {
-	config := AgentConfig{
-		Name:  "test-gemini",
-		Type:  AgentTypeGemini,
-		Model: "gemini-pro",
-	}
-
-	agent, err := NewAgent(config)
-	if err != nil {
-		t.Fatalf("NewAgent(gemini) error: %v", err)
-	}
-
-	if agent == nil {
-		t.Fatal("NewAgent(gemini) should not return nil")
-	}
-
-	if agent.Name() != "test-gemini" {
-		t.Errorf("agent.Name() = %q, want %q", agent.Name(), "test-gemini")
 	}
 }
 

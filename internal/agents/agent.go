@@ -9,8 +9,6 @@ type AgentType string
 
 const (
 	AgentTypeClaude AgentType = "claude"
-	AgentTypeOpenAI AgentType = "openai"
-	AgentTypeGemini AgentType = "gemini"
 )
 
 type AgentConfig struct {
@@ -48,10 +46,6 @@ func NewAgent(config AgentConfig) (Agent, error) {
 	switch config.Type {
 	case AgentTypeClaude:
 		return NewClaudeAgent(config)
-	case AgentTypeOpenAI:
-		return NewOpenAIAgent(config)
-	case AgentTypeGemini:
-		return NewGeminiAgent(config)
 	default:
 		return nil, fmt.Errorf("unknown agent type: %s", config.Type)
 	}

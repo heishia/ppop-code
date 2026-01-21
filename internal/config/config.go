@@ -50,28 +50,10 @@ func DefaultConfig() *Config {
 			Debug:   false,
 		},
 		Agents: map[string]AgentConfig{
-			"orchestrator": {
-				Type:      "claude",
-				Model:     "claude-opus-4-20250514",
-				Role:      "Main orchestrator - analyzes tasks and routes to appropriate agents",
-				MaxTokens: 4096,
-			},
-			"gemini": {
-				Type:      "gemini",
-				Model:     "gemini-2.0-flash",
-				Role:      "Frontend specialist - UX/UI development",
-				MaxTokens: 4096,
-			},
-			"gpt": {
-				Type:      "openai",
-				Model:     "gpt-4o",
-				Role:      "Design & debugging specialist",
-				MaxTokens: 4096,
-			},
 			"sonnet": {
 				Type:      "claude",
 				Model:     "claude-sonnet-4-20250514",
-				Role:      "General coding tasks",
+				Role:      "Main coding assistant",
 				MaxTokens: 4096,
 			},
 		},
@@ -128,10 +110,9 @@ func (c *Config) ToAgentConfigs() map[string]agents.AgentConfig {
 		switch ac.Type {
 		case "claude":
 			agentType = agents.AgentTypeClaude
-		case "openai":
-			agentType = agents.AgentTypeOpenAI
-		case "gemini":
-			agentType = agents.AgentTypeGemini
+		default:
+			// Skip unknown agent types
+			continue
 		}
 
 		configs[name] = agents.AgentConfig{

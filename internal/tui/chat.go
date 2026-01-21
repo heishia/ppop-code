@@ -300,12 +300,7 @@ func (m *ChatModel) renderMessages() string {
 		welcome := `
 Welcome to ppopcode!
 
-I'm your AI orchestrator. I'll analyze your request and route it to the best agent:
-
-  * Gemini 3 Pro  -> UX/UI tasks
-  * GPT 5.2       -> Design & debugging
-  * Sonnet 4.5    -> General coding
-
+I'm your AI coding assistant powered by Claude.
 Code modifications will be executed by Cursor.
 
 Commands:

@@ -2,15 +2,15 @@
 
 > **[한국어 설치 가이드 보기](README.ko.md)**
 
-**Multi-agent AI coding assistant with TUI interface.**
+**AI coding assistant with TUI interface, powered by Claude.**
 
 ---
 
 ### Why ppopcode?
 
-**Tired of switching between ChatGPT, Claude, and Cursor?**
+**Tired of switching between your IDE and AI chat windows?**
 
-ppopcode brings all your AI tools into one terminal. Just say what you want, and it picks the right AI for the job.
+ppopcode brings Claude directly into your terminal. Just say what you want, and it handles everything - from answering questions to editing code via Cursor.
 
 ---
 
@@ -18,18 +18,19 @@ ppopcode brings all your AI tools into one terminal. Just say what you want, and
 
 | Feature | Description |
 |---------|-------------|
-| **One Interface** | Multiple AIs in a single terminal |
-| **Smart Routing** | Auto-selects the best AI for each task |
+| **Terminal UI** | Clean, efficient TUI interface |
+| **Claude Powered** | Uses Claude Code for intelligent responses |
 | **Cursor Integration** | Code edits handled automatically |
 | **Workflows** | Automate repetitive tasks |
+| **Session Context** | Maintains conversation history |
 
 ---
 
 ### Who is this for?
 
-- Developers tired of copy-pasting between AI tools
+- Developers who prefer terminal-based workflows
 - Cursor subscribers who want to maximize their plan
-- Anyone who prefers a clean, terminal-based workflow
+- Anyone who wants AI coding assistance without leaving the terminal
 
 ---
 
@@ -37,34 +38,29 @@ ppopcode brings all your AI tools into one terminal. Just say what you want, and
 
 **Before (The Old Way)**
 ```
-1. Open ChatGPT in browser
+1. Open browser for AI chat
 2. Ask question, copy answer
 3. Open Cursor
 4. Paste code
 5. Stuck? Go back to step 1...
-→ Repeat, repeat, repeat 😩
+→ Repeat, repeat, repeat
 ```
 
 **After (ppopcode)**
 ```
 1. Run ppopcode in terminal
 2. Type what you want
-3. Done! 😊
+3. Done!
 ```
 
 ---
-
-## What is this?
-
-ppopcode combines multiple AI models (Claude, GPT, Gemini) into a single terminal interface. You say what you want, and it automatically picks the right AI for the job.
 
 ## Quick Start
 
 ### Prerequisites
 - Go 1.21+
 - **Claude Code subscription** - Run `claude login` to authenticate
-- **Cursor subscription** - For code editing features
-- (Optional) OpenAI/Google API keys for GPT/Gemini agents
+- **Cursor subscription** - For code editing features (optional)
 
 ### Installation
 
@@ -137,32 +133,20 @@ For workflow features, install the cc-wf-studio VSCode extension:
 claude login
 ```
 
-**Cursor (Required for code editing)**
+**Cursor (Optional, for code editing)**
 - Open Cursor IDE and sign in with your subscription
-
-**Optional API Keys (for GPT/Gemini agents)**
-```bash
-export OPENAI_API_KEY="your-key"    # For GPT agent
-export GOOGLE_API_KEY="your-key"    # For Gemini agent
-```
 
 ## How It Works
 
 ```
 You: "Create a login form"
      ↓
-ppopcode: "UI task? Let me ask Gemini!"
+ppopcode: Sends request to Claude
      ↓
-Gemini plans the work
+Claude analyzes and responds
      ↓
-Cursor edits the code
+Code edits are applied via Cursor
 ```
-
-| Task Type | AI Agent |
-|-----------|----------|
-| UI/UX | Gemini |
-| Debug/Design | GPT |
-| General coding | Sonnet |
 
 ## Controls
 
@@ -170,10 +154,15 @@ Cursor edits the code
 - `Enter`: Select
 - `Esc`: Back
 - `q`: Quit
+- `/clean`: Clear chat history
 
 ## Documentation
 
 - [한국어 가이드](README.ko.md)
+
+## Version
+
+**v1.0.0** - Initial stable release
 
 ## License
 

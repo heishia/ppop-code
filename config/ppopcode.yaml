@@ -3,26 +3,11 @@ app:
     version: 1.0.0
     debug: false
 agents:
-    gemini:
-        type: gemini
-        model: gemini-3-flash
-        max_tokens: 4096
-        role: Frontend specialist - UX/UI development
-    gpt:
-        type: openai
-        model: gpt-5.2
-        max_tokens: 4096
-        role: Design & debugging specialist
-    orchestrator:
-        type: claude
-        model: claude-opus-4-5-20251101
-        max_tokens: 4096
-        role: Main orchestrator - analyzes tasks and routes to appropriate agents
     sonnet:
         type: claude
-        model: claude-sonnet-4-5-20250929
+        model: claude-sonnet-4-20250514
         max_tokens: 4096
-        role: General coding tasks
+        role: Main coding assistant
 cursor:
     command: cursor-agent
     timeout: 300
