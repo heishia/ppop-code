@@ -250,11 +250,9 @@ func parseClaudeStreamLine(line string) (chunkType, content string) {
 		}
 		return "", ""
 	case "result":
-		// Final result - could use this instead of accumulating
-		if event.Result != "" {
-			return "output", event.Result
-		}
-		return "status", "Completed"
+		// Final result - already received via streaming, so skip to avoid duplicate
+		// The result event contains the full response which we already accumulated
+		return "", ""
 	default:
 		return "", ""
 	}
