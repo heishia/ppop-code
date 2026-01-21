@@ -137,6 +137,14 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return a, nil
 			}
 		}
+
+	case StreamUpdateMsg:
+		// Forward streaming updates directly to chat
+		if a.currentView == ViewChat {
+			newChat, chatCmd := a.chat.Update(msg)
+			a.chat = newChat.(*ChatModel)
+			return a, chatCmd
+		}
 	}
 
 	var cmd tea.Cmd
