@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -42,6 +44,8 @@ type ChatModel struct {
 	orchestrator  *orchestrator.Orchestrator
 	session       *session.Manager
 	progressChan  <-chan orchestrator.ProgressUpdate // Active progress channel
+	spinner       spinner.Model
+	startTime     time.Time
 }
 
 func NewChatModel() *ChatModel {
@@ -53,10 +57,15 @@ func NewChatModel() *ChatModel {
 	ti.ShowLineNumbers = false
 	ti.Focus()
 
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(accentColor)
+
 	return &ChatModel{
 		messages:   []Message{},
 		input:      ti,
 		processing: false,
+		spinner:    s,
 	}
 }
 
@@ -69,12 +78,17 @@ func NewChatModelWithOrchestrator(orch *orchestrator.Orchestrator, sess *session
 	ti.ShowLineNumbers = false
 	ti.Focus()
 
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(accentColor)
+
 	return &ChatModel{
 		messages:     []Message{},
 		input:        ti,
 		processing:   false,
 		orchestrator: orch,
 		session:      sess,
+		spinner:      s,
 	}
 }
 
@@ -112,12 +126,29 @@ type StreamUpdateMsg struct {
 	Done    bool
 }
 
+// tickMsg is sent periodically to update spinner and elapsed time
+type tickMsg time.Time
+
+func tickCmd() tea.Cmd {
+	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
+}
+
 func (m *ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.SetSize(msg.Width, msg.Height)
+
+	case tickMsg:
+		if m.processing {
+			var cmd tea.Cmd
+			m.spinner, cmd = m.spinner.Update(msg)
+			return m, tea.Batch(cmd, tickCmd())
+		}
+		return m, nil
 
 	case tea.KeyMsg:
 		switch {
@@ -157,13 +188,14 @@ func (m *ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.viewport.GotoBottom()
 
 			m.processing = true
+			m.startTime = time.Now()
 
 			// Start streaming and get the channel
 			progressChan := m.startStreaming(content)
 			m.progressChan = progressChan
 
-			// Return command to listen for first update
-			return m, m.waitForUpdate()
+			// Return command to listen for first update and start spinner tick
+			return m, tea.Batch(m.waitForUpdate(), tickCmd())
 		}
 
 	case StreamUpdateMsg:
@@ -338,12 +370,16 @@ func (m *ChatModel) View() string {
 
 	statusText := ""
 	if m.processing {
+		elapsed := time.Since(m.startTime)
+		elapsedStr := fmt.Sprintf("(%ds)", int(elapsed.Seconds()))
+		statusStyle := lipgloss.NewStyle().Foreground(accentColor)
+
 		if m.thinkingText != "" {
-			statusText = lipgloss.NewStyle().Foreground(accentColor).Render(fmt.Sprintf(" [%s] %s", m.currentAgent, m.thinkingText))
+			statusText = statusStyle.Render(fmt.Sprintf(" %s [%s] %s %s", m.spinner.View(), m.currentAgent, m.thinkingText, elapsedStr))
 		} else if m.currentAgent != "" {
-			statusText = lipgloss.NewStyle().Foreground(accentColor).Render(fmt.Sprintf(" [%s] Processing...", m.currentAgent))
+			statusText = statusStyle.Render(fmt.Sprintf(" %s [%s] Processing... %s", m.spinner.View(), m.currentAgent, elapsedStr))
 		} else {
-			statusText = lipgloss.NewStyle().Foreground(accentColor).Render(" Processing...")
+			statusText = statusStyle.Render(fmt.Sprintf(" %s Initializing... %s", m.spinner.View(), elapsedStr))
 		}
 	}
 
