@@ -2,7 +2,10 @@ package tui
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -64,6 +67,38 @@ type WorkflowRunModel struct {
 	inputField   textarea.Model
 	questionText string
 	options      []string
+
+	// Exit confirmation dialog
+	showExitConfirm bool
+	exitSelection   int // 0: Save & Exit, 1: Exit without saving, 2: Cancel
+
+	// Checkpoint support
+	workflowPath   string
+	lastSavedTime  time.Time
+	autoSaveTimer  time.Time
+	checkpointPath string
+}
+
+// WorkflowCheckpoint represents saved workflow state
+type WorkflowCheckpoint struct {
+	WorkflowID    string                 `json:"workflow_id"`
+	WorkflowName  string                 `json:"workflow_name"`
+	WorkflowPath  string                 `json:"workflow_path"`
+	CurrentNode   int                    `json:"current_node"`
+	NodeStates    []NodeCheckpointState  `json:"node_states"`
+	Variables     map[string]interface{} `json:"variables"`
+	Results       map[string]interface{} `json:"results"`
+	Output        string                 `json:"output"`
+	SavedAt       time.Time              `json:"saved_at"`
+	StartedAt     time.Time              `json:"started_at"`
+	ElapsedBefore time.Duration          `json:"elapsed_before"`
+}
+
+// NodeCheckpointState represents a node's saved state
+type NodeCheckpointState struct {
+	ID     string     `json:"id"`
+	Status NodeStatus `json:"status"`
+	Output string     `json:"output"`
 }
 
 // ExecutionProgressMsg wraps workflow.ExecutionProgress for the TUI
@@ -173,6 +208,7 @@ func (m *WorkflowRunModel) Init() tea.Cmd {
 	// Start execution
 	m.running = true
 	m.startTime = time.Now()
+	m.autoSaveTimer = time.Now()
 	m.progressChan = m.executor.ExecuteAsync(m.ctx)
 
 	return tea.Batch(
@@ -215,6 +251,13 @@ func (m *WorkflowRunModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.running {
 			var cmd tea.Cmd
 			m.spinner, cmd = m.spinner.Update(msg)
+
+			// Auto-save every 30 seconds
+			if time.Since(m.autoSaveTimer) > 30*time.Second {
+				m.autoSaveTimer = time.Now()
+				_ = m.saveCheckpoint() // Silent auto-save
+			}
+
 			return m, tea.Batch(cmd, workflowTickCmd())
 		}
 		return m, nil
@@ -223,6 +266,11 @@ func (m *WorkflowRunModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleProgress(msg)
 
 	case tea.KeyMsg:
+		// Handle exit confirmation dialog
+		if m.showExitConfirm {
+			return m.handleExitConfirmInput(msg)
+		}
+
 		// Handle user input for askUserQuestion
 		if m.waitingInput {
 			switch msg.Type {
@@ -251,9 +299,12 @@ func (m *WorkflowRunModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			case tea.KeyEsc:
-				// Cancel and go back
-				m.cancel()
-				m.running = false
+				// Show exit confirmation instead of immediate exit
+				if m.running {
+					m.showExitConfirm = true
+					m.exitSelection = 2 // Default to Cancel
+					return m, nil
+				}
 				return m, nil
 			}
 
@@ -267,8 +318,23 @@ func (m *WorkflowRunModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Normal key handling when not waiting for input
 		switch msg.Type {
 		case tea.KeyEsc, tea.KeyCtrlC:
-			m.cancel()
-			m.running = false
+			// Show exit confirmation if running
+			if m.running {
+				m.showExitConfirm = true
+				m.exitSelection = 2 // Default to Cancel
+				return m, nil
+			}
+			// If completed, just exit
+			return m, nil
+		case tea.KeyCtrlS:
+			// Manual save
+			if m.running {
+				if err := m.saveCheckpoint(); err == nil {
+					m.output.WriteString("\n[Checkpoint saved]\n")
+					m.viewport.SetContent(m.output.String())
+					m.viewport.GotoBottom()
+				}
+			}
 			return m, nil
 		}
 	}
@@ -279,6 +345,37 @@ func (m *WorkflowRunModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, vpCmd)
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m *WorkflowRunModel) handleExitConfirmInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.Type {
+	case tea.KeyLeft:
+		if m.exitSelection > 0 {
+			m.exitSelection--
+		}
+	case tea.KeyRight:
+		if m.exitSelection < 2 {
+			m.exitSelection++
+		}
+	case tea.KeyEnter:
+		switch m.exitSelection {
+		case 0: // Save & Exit
+			_ = m.saveCheckpoint()
+			m.cancel()
+			m.running = false
+			m.showExitConfirm = false
+		case 1: // Exit without saving
+			m.cancel()
+			m.running = false
+			m.showExitConfirm = false
+		case 2: // Cancel (stay)
+			m.showExitConfirm = false
+		}
+	case tea.KeyEsc:
+		// Cancel the dialog
+		m.showExitConfirm = false
+	}
+	return m, nil
 }
 
 func (m *WorkflowRunModel) handleProgress(msg ExecutionProgressMsg) (tea.Model, tea.Cmd) {
@@ -335,6 +432,11 @@ func (m *WorkflowRunModel) View() string {
 		return "Loading..."
 	}
 
+	// Show exit confirmation dialog if active
+	if m.showExitConfirm {
+		return m.viewExitConfirm()
+	}
+
 	// Header
 	headerStyle := lipgloss.NewStyle().
 		Bold(true).
@@ -351,6 +453,12 @@ func (m *WorkflowRunModel) View() string {
 		elapsed := time.Since(m.startTime)
 		statusStyle := lipgloss.NewStyle().Foreground(accentColor)
 		statusText = statusStyle.Render(fmt.Sprintf(" %s Running... (%ds)", m.spinner.View(), int(elapsed.Seconds())))
+
+		// Show auto-save indicator
+		if !m.lastSavedTime.IsZero() {
+			savedAgo := int(time.Since(m.lastSavedTime).Seconds())
+			statusText += mutedStyle.Render(fmt.Sprintf(" [Saved %ds ago]", savedAgo))
+		}
 	} else if m.completed {
 		if m.errMsg != "" {
 			statusText = lipgloss.NewStyle().Foreground(lipgloss.Color("#EF4444")).Render(" [Error]")
@@ -435,9 +543,9 @@ func (m *WorkflowRunModel) View() string {
 	// Help text
 	var helpText string
 	if m.waitingInput {
-		helpText = helpStyle.Render("Enter: submit answer | Esc: cancel")
+		helpText = helpStyle.Render("Enter: submit answer | Esc: exit menu | Ctrl+S: save")
 	} else if m.running {
-		helpText = helpStyle.Render(fmt.Sprintf("Running node %d/%d | Esc: cancel", m.currentNode+1, len(m.nodes)))
+		helpText = helpStyle.Render(fmt.Sprintf("Running node %d/%d | Esc: exit menu | Ctrl+S: save", m.currentNode+1, len(m.nodes)))
 	} else {
 		helpText = helpStyle.Render("Esc: back to workflows")
 	}
@@ -450,6 +558,59 @@ func (m *WorkflowRunModel) View() string {
 		"",
 		helpText,
 	)
+}
+
+func (m *WorkflowRunModel) viewExitConfirm() string {
+	// Dialog box style
+	dialogStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(accentColor).
+		Padding(1, 2).
+		Width(50)
+
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(accentColor).
+		MarginBottom(1)
+
+	// Button styles
+	buttonNormal := lipgloss.NewStyle().
+		Padding(0, 2).
+		MarginRight(1)
+
+	buttonSelected := lipgloss.NewStyle().
+		Padding(0, 2).
+		MarginRight(1).
+		Background(primaryColor).
+		Foreground(lipgloss.Color("#FFFFFF")).
+		Bold(true)
+
+	var content strings.Builder
+	content.WriteString(titleStyle.Render("Exit Workflow?"))
+	content.WriteString("\n\n")
+	content.WriteString("The workflow is still running.\n")
+	content.WriteString("What would you like to do?\n\n")
+
+	// Buttons
+	buttons := []string{"Save & Exit", "Exit", "Cancel"}
+	var buttonRow strings.Builder
+
+	for i, btn := range buttons {
+		if i == m.exitSelection {
+			buttonRow.WriteString(buttonSelected.Render("[" + btn + "]"))
+		} else {
+			buttonRow.WriteString(buttonNormal.Render(" " + btn + " "))
+		}
+	}
+
+	content.WriteString(buttonRow.String())
+	content.WriteString("\n\n")
+	content.WriteString(mutedStyle.Render("Use arrow keys to select, Enter to confirm"))
+
+	dialog := dialogStyle.Render(content.String())
+
+	// Center the dialog
+	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, dialog)
 }
 
 func (m *WorkflowRunModel) getStatusIcon(status NodeStatus, isCurrentRunning bool) string {
@@ -482,8 +643,135 @@ func (m *WorkflowRunModel) IsCompleted() bool {
 	return m.completed
 }
 
+// IsShowingExitConfirm returns true if the exit confirmation dialog is visible
+func (m *WorkflowRunModel) IsShowingExitConfirm() bool {
+	return m.showExitConfirm
+}
+
 // Cancel stops the workflow execution
 func (m *WorkflowRunModel) Cancel() {
 	m.cancel()
 	m.running = false
+}
+
+// SetWorkflowPath sets the path for checkpoint saving
+func (m *WorkflowRunModel) SetWorkflowPath(path string) {
+	m.workflowPath = path
+	// Generate checkpoint path
+	dir := filepath.Dir(path)
+	base := filepath.Base(path)
+	name := strings.TrimSuffix(base, filepath.Ext(base))
+	m.checkpointPath = filepath.Join(dir, ".checkpoints", name+".checkpoint.json")
+}
+
+// saveCheckpoint saves the current workflow state to a checkpoint file
+func (m *WorkflowRunModel) saveCheckpoint() error {
+	if m.checkpointPath == "" {
+		// Generate default checkpoint path
+		m.checkpointPath = filepath.Join(".vscode", "workflows", ".checkpoints", m.workflow.ID+".checkpoint.json")
+	}
+
+	// Build node states
+	nodeStates := make([]NodeCheckpointState, len(m.nodes))
+	for i, node := range m.nodes {
+		nodeStates[i] = NodeCheckpointState{
+			ID:     node.ID,
+			Status: node.Status,
+			Output: node.Output,
+		}
+	}
+
+	// Get execution context data
+	results := m.executor.GetResults()
+
+	checkpoint := WorkflowCheckpoint{
+		WorkflowID:    m.workflow.ID,
+		WorkflowName:  m.workflow.Name,
+		WorkflowPath:  m.workflowPath,
+		CurrentNode:   m.currentNode,
+		NodeStates:    nodeStates,
+		Variables:     make(map[string]interface{}),
+		Results:       results,
+		Output:        m.output.String(),
+		SavedAt:       time.Now(),
+		StartedAt:     m.startTime,
+		ElapsedBefore: time.Since(m.startTime),
+	}
+
+	// Ensure directory exists
+	dir := filepath.Dir(m.checkpointPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create checkpoint directory: %w", err)
+	}
+
+	// Write checkpoint file
+	data, err := json.MarshalIndent(checkpoint, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal checkpoint: %w", err)
+	}
+
+	if err := os.WriteFile(m.checkpointPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write checkpoint: %w", err)
+	}
+
+	m.lastSavedTime = time.Now()
+	return nil
+}
+
+// LoadCheckpoint loads a workflow checkpoint from file
+func LoadCheckpoint(checkpointPath string) (*WorkflowCheckpoint, error) {
+	data, err := os.ReadFile(checkpointPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read checkpoint: %w", err)
+	}
+
+	var checkpoint WorkflowCheckpoint
+	if err := json.Unmarshal(data, &checkpoint); err != nil {
+		return nil, fmt.Errorf("failed to parse checkpoint: %w", err)
+	}
+
+	return &checkpoint, nil
+}
+
+// GetCheckpointPath returns the checkpoint path for a workflow
+func GetCheckpointPath(workflowPath string) string {
+	dir := filepath.Dir(workflowPath)
+	base := filepath.Base(workflowPath)
+	name := strings.TrimSuffix(base, filepath.Ext(base))
+	return filepath.Join(dir, ".checkpoints", name+".checkpoint.json")
+}
+
+// HasCheckpoint checks if a checkpoint exists for the workflow
+func HasCheckpoint(workflowPath string) bool {
+	checkpointPath := GetCheckpointPath(workflowPath)
+	_, err := os.Stat(checkpointPath)
+	return err == nil
+}
+
+// DeleteCheckpoint removes the checkpoint file
+func (m *WorkflowRunModel) DeleteCheckpoint() error {
+	if m.checkpointPath == "" {
+		return nil
+	}
+	return os.Remove(m.checkpointPath)
+}
+
+// RestoreFromCheckpoint restores workflow state from a checkpoint
+func (m *WorkflowRunModel) RestoreFromCheckpoint(checkpoint *WorkflowCheckpoint) {
+	m.currentNode = checkpoint.CurrentNode
+	m.output.WriteString(checkpoint.Output)
+	m.viewport.SetContent(m.output.String())
+
+	// Restore node states
+	for i, state := range checkpoint.NodeStates {
+		if i < len(m.nodes) {
+			m.nodes[i].Status = state.Status
+			m.nodes[i].Output = state.Output
+		}
+	}
+
+	// Add resume message
+	m.output.WriteString(fmt.Sprintf("\n[Resumed from checkpoint saved at %s]\n", checkpoint.SavedAt.Format("15:04:05")))
+	m.viewport.SetContent(m.output.String())
+	m.viewport.GotoBottom()
 }

@@ -141,11 +141,15 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.workflow.CloseSubView()
 				return a, nil
 			}
-			// Handle workflow run - cancel if running
+			// Handle workflow run - let it handle its own exit confirmation
 			if a.currentView == ViewWorkflowRun && a.workflowRun != nil {
 				if a.workflowRun.IsRunning() {
-					a.workflowRun.Cancel()
+					// Let the workflow run model handle exit confirmation
+					newWfRun, wfRunCmd := a.workflowRun.Update(msg)
+					a.workflowRun = newWfRun.(*WorkflowRunModel)
+					return a, wfRunCmd
 				}
+				// If not running, go back
 				a.currentView = ViewWorkflow
 				return a, nil
 			}
@@ -160,10 +164,17 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					a.workflow.CloseSubView()
 					return a, nil
 				}
-				// Handle workflow run - go back to workflow list
+				// Handle workflow run - let it handle its own exit confirmation
 				if a.currentView == ViewWorkflowRun && a.workflowRun != nil {
 					if a.workflowRun.IsRunning() {
-						a.workflowRun.Cancel()
+						// Let the workflow run model handle exit confirmation
+						newWfRun, wfRunCmd := a.workflowRun.Update(msg)
+						a.workflowRun = newWfRun.(*WorkflowRunModel)
+						// Check if workflow was stopped (user confirmed exit)
+						if !a.workflowRun.IsRunning() && !a.workflowRun.IsCompleted() {
+							a.currentView = ViewWorkflow
+						}
+						return a, wfRunCmd
 					}
 					a.currentView = ViewWorkflow
 					return a, nil
@@ -181,6 +192,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, nil
 		}
 		a.workflowRun = NewWorkflowRunModel(msg.Workflow, a.orchestrator)
+		a.workflowRun.SetWorkflowPath(msg.Path)
 		a.workflowRun.SetSize(a.width, a.height-4)
 		a.currentView = ViewWorkflowRun
 		return a, a.workflowRun.Init()
