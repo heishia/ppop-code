@@ -5,11 +5,13 @@ type Router struct {
 }
 
 func NewRouter() *Router {
+	// All requests go to Claude (sonnet) as the orchestrator
+	// Claude maintains conversation context and decides when to delegate
 	return &Router{
 		routes: map[TaskType]string{
-			TaskTypeUI:      "gemini",
-			TaskTypeDesign:  "gpt",
-			TaskTypeDebug:   "gpt",
+			TaskTypeUI:      "sonnet",
+			TaskTypeDesign:  "sonnet",
+			TaskTypeDebug:   "sonnet",
 			TaskTypeCode:    "sonnet",
 			TaskTypeGeneral: "sonnet",
 		},

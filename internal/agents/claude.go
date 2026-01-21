@@ -69,7 +69,8 @@ func (a *ClaudeAgent) Execute(ctx context.Context, prompt string) (*Response, er
 	defer a.SetStatus("ready")
 
 	// Build command arguments
-	args := []string{"-p", prompt, "--output-format", "text"}
+	// --continue: maintain conversation context across calls
+	args := []string{"-p", prompt, "--output-format", "text", "--continue"}
 
 	cmd := exec.CommandContext(ctx, a.cliPath, args...)
 
@@ -120,7 +121,8 @@ func (a *ClaudeAgent) ExecuteStream(ctx context.Context, prompt string, stream c
 
 	// Build command arguments - use streaming output
 	// Note: stream-json requires --verbose flag
-	args := []string{"-p", prompt, "--output-format", "stream-json", "--verbose"}
+	// --continue: maintain conversation context across calls
+	args := []string{"-p", prompt, "--output-format", "stream-json", "--verbose", "--continue"}
 
 	cmd := exec.CommandContext(ctx, a.cliPath, args...)
 
