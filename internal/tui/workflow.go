@@ -229,11 +229,11 @@ func (m *WorkflowModel) launchWFStudio() tea.Cmd {
 		var cmd *exec.Cmd
 		switch runtime.GOOS {
 		case "windows":
-			cmd = exec.Command("cmd", "/c", "cursor", "--reuse-window", "--command", "cc-wf-studio.openWorkflowEditor")
+			cmd = exec.Command("cmd", "/c", "cursor", "--reuse-window", "--command", "cc-wf-studio.openEditor")
 		case "darwin":
-			cmd = exec.Command("cursor", "--reuse-window", "--command", "cc-wf-studio.openWorkflowEditor")
+			cmd = exec.Command("cursor", "--reuse-window", "--command", "cc-wf-studio.openEditor")
 		default:
-			cmd = exec.Command("cursor", "--reuse-window", "--command", "cc-wf-studio.openWorkflowEditor")
+			cmd = exec.Command("cursor", "--reuse-window", "--command", "cc-wf-studio.openEditor")
 		}
 		err := cmd.Start()
 		return WFStudioLaunchMsg{Success: err == nil, Error: err}
