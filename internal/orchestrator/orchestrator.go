@@ -3,7 +3,6 @@ package orchestrator
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/ppopcode/ppopcode/internal/agents"
 )
@@ -93,30 +92,9 @@ func (o *Orchestrator) Process(ctx context.Context, input string) (*Task, error)
 	return task, nil
 }
 
-func (o *Orchestrator) analyzeTask(input string) TaskType {
-	lower := strings.ToLower(input)
-
-	uiKeywords := []string{"ui", "ux", "frontend", "component", "button", "form", "layout", "style", "css", "design", "화면", "디자인", "컴포넌트", "프론트"}
-	for _, kw := range uiKeywords {
-		if strings.Contains(lower, kw) {
-			return TaskTypeUI
-		}
-	}
-
-	designKeywords := []string{"architecture", "structure", "refactor", "pattern", "설계", "아키텍처", "구조", "리팩토링"}
-	for _, kw := range designKeywords {
-		if strings.Contains(lower, kw) {
-			return TaskTypeDesign
-		}
-	}
-
-	debugKeywords := []string{"bug", "error", "fix", "debug", "issue", "problem", "버그", "에러", "오류", "수정", "디버그"}
-	for _, kw := range debugKeywords {
-		if strings.Contains(lower, kw) {
-			return TaskTypeDebug
-		}
-	}
-
+func (o *Orchestrator) analyzeTask(_ string) TaskType {
+	// Claude (the orchestrator) handles all decisions
+	// No keyword-based routing - the model decides what to do
 	return TaskTypeGeneral
 }
 
