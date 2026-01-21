@@ -3,12 +3,12 @@
 # Detect OS
 ifeq ($(OS),Windows_NT)
     BINARY_NAME := ppopcode.exe
-    INSTALL_SCRIPT := .\install.ps1
-    UNINSTALL_SCRIPT := .\install.ps1 -Uninstall
+    INSTALL_SCRIPT := .\scripts\install.ps1
+    UNINSTALL_SCRIPT := .\scripts\install.ps1 -Uninstall
 else
     BINARY_NAME := ppopcode
-    INSTALL_SCRIPT := ./install.sh
-    UNINSTALL_SCRIPT := ./install.sh uninstall
+    INSTALL_SCRIPT := ./scripts/install.sh
+    UNINSTALL_SCRIPT := ./scripts/install.sh uninstall
 endif
 
 help: ## Show this help message
@@ -24,18 +24,18 @@ build: clean ## Build the binary (auto-cleans previous build)
 install: build ## Build and install globally
 	@echo "Installing ppopcode..."
 ifeq ($(OS),Windows_NT)
-	powershell -ExecutionPolicy Bypass -File install.ps1
+	powershell -ExecutionPolicy Bypass -File scripts/install.ps1
 else
-	chmod +x install.sh
-	./install.sh
+	chmod +x scripts/install.sh
+	./scripts/install.sh
 endif
 
 uninstall: ## Uninstall ppopcode
 	@echo "Uninstalling ppopcode..."
 ifeq ($(OS),Windows_NT)
-	powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall
+	powershell -ExecutionPolicy Bypass -File scripts/install.ps1 -Uninstall
 else
-	./install.sh uninstall
+	./scripts/install.sh uninstall
 endif
 
 clean: ## Remove built binaries
@@ -48,9 +48,20 @@ endif
 	go clean
 	@echo "✓ Clean complete"
 
-test: ## Run tests
+test: ## Run tests (clean output)
 	@echo "Running tests..."
-	go test ./...
+	@echo ""
+ifeq ($(OS),Windows_NT)
+	@powershell -Command "$$results = go test ./... 2>&1; $$passed = ($$results | Select-String 'ok').Count; $$failed = ($$results | Select-String 'FAIL').Count; $$results | ForEach-Object { if ($$_ -match '^ok') { Write-Host \"  PASS: $$($$_ -replace 'ok\s+', '' -replace '\s+[\d.]+s.*', '')\" -ForegroundColor Green } elseif ($$_ -match '^FAIL') { Write-Host \"  FAIL: $$($$_ -replace 'FAIL\s+', '' -replace '\s+[\d.]+s.*', '')\" -ForegroundColor Red } }; echo ''; echo \"Summary: $$passed passed, $$failed failed\""
+else
+	@go test ./... 2>&1 | awk '/^ok/ {print "  \033[32mPASS:\033[0m " $$2} /^FAIL/ {print "  \033[31mFAIL:\033[0m " $$2} END {print ""}'
+endif
+
+test-v: ## Run tests with verbose output
+	go test ./... -v
+
+test-cover: ## Run tests with coverage
+	go test ./... -cover
 
 run: build ## Build and run locally
 	./$(BINARY_NAME)

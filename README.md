@@ -84,11 +84,11 @@ go mod tidy
 go build -o ppopcode ./cmd/ppopcode
 
 # Install globally (Linux/Mac)
-chmod +x install.sh
-./install.sh
+chmod +x scripts/install.sh
+./scripts/install.sh
 
 # Or on Windows (PowerShell)
-.\install.ps1
+.\scripts\install.ps1
 
 # 3. Use from anywhere!
 ppopcode
@@ -110,10 +110,10 @@ go build -o ppopcode ./cmd/ppopcode
 
 ```bash
 # Linux/Mac
-./install.sh uninstall
+./scripts/install.sh uninstall
 
 # Windows
-.\install.ps1 -Uninstall
+.\scripts\install.ps1 -Uninstall
 ```
 
 ### cc-wf-studio Extension (Optional)
@@ -172,8 +172,6 @@ Cursor edits the code
 ## Documentation
 
 - [한국어 가이드](README.ko.md)
-- [Technical Docs](docs/README.md)
-- [Architecture Plan](docs/plan/refactoring-plan.md)
 
 ## License
 

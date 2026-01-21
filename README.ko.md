@@ -130,13 +130,13 @@ make install
 
 Linux/Mac:
 ```bash
-chmod +x install.sh
-./install.sh
+chmod +x scripts/install.sh
+./scripts/install.sh
 ```
 
 Windows (PowerShell):
 ```powershell
-.\install.ps1
+.\scripts\install.ps1
 ```
 
 설치가 끝나면 새 터미널을 열고:
@@ -177,12 +177,12 @@ Windows에서는:
 
 **Linux/Mac:**
 ```bash
-./install.sh uninstall
+./scripts/install.sh uninstall
 ```
 
 **Windows:**
 ```powershell
-.\install.ps1 -Uninstall
+.\scripts\install.ps1 -Uninstall
 ```
 
 ## cc-wf-studio 설치 (선택사항)

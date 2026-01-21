@@ -40,16 +40,16 @@ type AgentSetting struct {
 }
 
 type SettingsModel struct {
-	agents       []AgentSetting
-	cursor       int
-	width        int
-	height       int
-	config       *config.Config
-	configPath   string
-	message      string
-	showMessage  bool
-	editMode     bool // true when selecting model for current agent
-	modelCursor  int  // cursor for model selection
+	agents      []AgentSetting
+	cursor      int
+	width       int
+	height      int
+	config      *config.Config
+	configPath  string
+	message     string
+	showMessage bool
+	editMode    bool // true when selecting model for current agent
+	modelCursor int  // cursor for model selection
 }
 
 // SettingsSavedMsg is sent when settings are saved
