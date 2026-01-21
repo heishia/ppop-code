@@ -32,7 +32,7 @@ agents:
 
   sonnet:
     type: claude
-    model: claude-sonnet-4-20250514
+    model: claude-sonnet-4-5-20250514
     role: General coding tasks
     max_tokens: 4096
     # Uses claude CLI subscription (no API key needed)

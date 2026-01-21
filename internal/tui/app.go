@@ -16,6 +16,7 @@ const (
 	ViewSetup
 	ViewChat
 	ViewWorkflow
+	ViewSettings
 	ViewAbout
 )
 
@@ -62,6 +63,7 @@ type App struct {
 	setup        *SetupModel
 	chat         *ChatModel
 	workflow     *WorkflowModel
+	settings     *SettingsModel
 	about        *AboutModel
 	width        int
 	height       int
@@ -80,6 +82,7 @@ func NewApp() *App {
 		setup:       NewSetupModel(),
 		chat:        NewChatModel(),
 		workflow:    NewWorkflowModel(),
+		settings:    NewSettingsModel(),
 		about:       NewAboutModel(),
 		keys:        DefaultKeyMap,
 	}
@@ -94,6 +97,7 @@ func NewAppWithDeps(orch *orchestrator.Orchestrator, sess *session.Manager, cfg 
 		setup:        NewSetupModel(),
 		chat:         chat,
 		workflow:     NewWorkflowModel(),
+		settings:     NewSettingsModelWithConfig(cfg),
 		about:        NewAboutModel(),
 		keys:         DefaultKeyMap,
 		orchestrator: orch,
@@ -117,6 +121,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.setup.SetSize(msg.Width, msg.Height-4)
 		a.chat.SetSize(msg.Width, msg.Height-4)
 		a.workflow.SetSize(msg.Width, msg.Height-4)
+		a.settings.SetSize(msg.Width, msg.Height-4)
 		a.about.SetSize(msg.Width, msg.Height-4)
 		return a, nil
 
@@ -166,7 +171,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.chat.Focus()
 			case 3: // Start with Workflow
 				a.currentView = ViewWorkflow
-			case 4: // About
+			case 4: // Settings
+				a.currentView = ViewSettings
+			case 5: // About
 				a.currentView = ViewAbout
 			}
 			a.menu.Selected = -1
@@ -192,6 +199,11 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.workflow = newWorkflow.(*WorkflowModel)
 		cmd = wfCmd
 
+	case ViewSettings:
+		newSettings, settingsCmd := a.settings.Update(msg)
+		a.settings = newSettings.(*SettingsModel)
+		cmd = settingsCmd
+
 	case ViewAbout:
 		newAbout, aboutCmd := a.about.Update(msg)
 		a.about = newAbout.(*AboutModel)
@@ -213,6 +225,8 @@ func (a *App) View() string {
 		return a.chat.View()
 	case ViewWorkflow:
 		return a.workflow.View()
+	case ViewSettings:
+		return a.settings.View()
 	case ViewAbout:
 		return a.about.View()
 	default:

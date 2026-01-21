@@ -47,6 +47,11 @@ func NewMenuModel() *MenuModel {
 				Icon:        "📋",
 			},
 			{
+				Title:       "Settings",
+				Description: "Configure AI models and preferences",
+				Icon:        "⚙️",
+			},
+			{
 				Title:       "About",
 				Description: "Version info and links",
 				Icon:        "ℹ️",
