@@ -1,0 +1,73 @@
+{
+  "display": {
+    "title": "ppopcode",
+    "subtitle": "Claude 기반 터미널 AI 코딩 비서",
+    "description": "터미널에서 Claude와 대화하며 코딩하는 TUI 도구입니다. Cursor IDE와 연동하여 코드 수정을 자동화합니다.",
+    "detailed_description": "**브라우저와 IDE를 오가는 번거로움을 해결합니다.**\n\n터미널에서 바로 AI 코딩 비서를 사용하세요:\n- Claude에게 질문하고 답변 받기\n- Cursor를 통한 자동 코드 수정\n- 워크플로우로 반복 작업 자동화\n\n**Before:** 브라우저 열기 → AI 채팅 → 답변 복사 → IDE 열기 → 붙여넣기 → 반복...\n\n**After:** 터미널에서 ppopcode 실행 → 원하는 것 입력 → 끝!"
+  },
+
+  "classification": {
+    "project_type": ["cli", "automation"],
+    "tags": ["Go", "TUI", "Claude", "Cursor", "AI"],
+    "status": "completed",
+    "priority": 10
+  },
+
+  "timeline": {
+    "start_date": "2024-01-01",
+    "end_date": "2025-01-23",
+    "is_ongoing": false
+  },
+
+  "technologies": [
+    { "name": "Go", "category": "Language", "version": "1.23" },
+    { "name": "Bubble Tea", "category": "Frontend", "version": "1.2.4" },
+    { "name": "Lip Gloss", "category": "Frontend", "version": "1.0.0" },
+    { "name": "Bubbles", "category": "Frontend", "version": "0.20.0" },
+    { "name": "Claude API", "category": "AI" },
+    { "name": "YAML", "category": "Tool" }
+  ],
+
+  "features": [
+    { "title": "터미널 UI (TUI)", "description": "Bubble Tea 기반의 깔끔하고 효율적인 터미널 인터페이스" },
+    { "title": "Claude 연동", "description": "Claude Code를 통한 지능적인 AI 응답 및 코드 생성" },
+    { "title": "Cursor 통합", "description": "Cursor IDE와 연동하여 코드 수정을 자동으로 적용" },
+    { "title": "워크플로우 자동화", "description": "반복 작업을 워크플로우로 정의하고 한 번에 실행" },
+    { "title": "세션 컨텍스트", "description": "대화 기록을 유지하여 연속적인 작업 가능" }
+  ],
+
+  "screenshots": [
+    { "file": "main.png", "caption": "메인 메뉴", "type": "desktop" },
+    { "file": "chat.png", "caption": "채팅 화면", "type": "desktop" }
+  ],
+
+  "links": {
+    "demo_url": "",
+    "documentation_url": "https://github.com/ppopcode/ppopcode"
+  },
+
+  "metrics": {
+    "lines_of_code": 2500,
+    "commit_count": 50,
+    "contributor_count": 1
+  },
+
+  "story": {
+    "challenges": "터미널 환경에서 AI 응답을 실시간으로 스트리밍하고, Cursor IDE와 안정적으로 연동하는 것이 도전 과제였습니다. 비동기 프로세스 간 통신과 상태 관리를 해결했습니다.",
+    "achievements": "브라우저와 IDE를 오가는 번거로움을 제거하여 개발 워크플로우를 단순화했습니다. 터미널을 떠나지 않고 AI 코딩 지원을 받을 수 있게 되었습니다."
+  },
+
+  "roles": [
+    {
+      "role_name": "Full Stack Developer",
+      "responsibility": "전체 시스템 설계 및 구현 (TUI, Claude 연동, Cursor 브릿지)",
+      "contribution_percentage": 100,
+      "contributions": {
+        "backend": true,
+        "frontend": true,
+        "database": false,
+        "devops": true
+      }
+    }
+  ]
+}
