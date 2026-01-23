@@ -335,9 +335,9 @@ func (m *WorkflowModel) getSkillPathsContent() string {
 	var userSkillPath string
 	switch runtime.GOOS {
 	case "windows":
-		userSkillPath = filepath.Join(os.Getenv("USERPROFILE"), ".claude", "skills")
+		userSkillPath = "%USERPROFILE%\\.claude\\skills\\"
 	default:
-		userSkillPath = filepath.Join(os.Getenv("HOME"), ".claude", "skills")
+		userSkillPath = "~/.claude/skills/"
 	}
 
 	return fmt.Sprintf(`📁 Skill Paths (for Browse Skills)
