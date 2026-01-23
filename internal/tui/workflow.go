@@ -344,7 +344,7 @@ func (m *WorkflowModel) getSkillPathsContent() string {
 		userSkillPath = "~/.claude/skills/"
 	}
 
-	return fmt.Sprintf(`📁 Skill Paths (for Browse Skills)
+	return fmt.Sprintf(`For CC WF Studio's "Browse Skills" panel:
 
 User Skills (all projects):
   %s
@@ -370,54 +370,49 @@ func (m *WorkflowModel) viewWFStudio() string {
 		Width(60)
 
 	if m.wfStudioInstall {
-		// Installed - show keybinding guide
-		b.WriteString(titleStyle.Render("🎨 CC WF Studio"))
-		b.WriteString("\n\n")
+		if m.shortcutLaunched {
+			// Second screen: Skill paths only
+			b.WriteString(titleStyle.Render("📁 Skill Paths"))
+			b.WriteString("\n\n")
 
-		content := `CC WF Studio extension is installed!
+			skillPaths := m.getSkillPathsContent()
+			b.WriteString(boxStyle.Render(skillPaths))
+			b.WriteString("\n\n")
+
+			help := helpStyle.Render("esc: back")
+			b.WriteString(help)
+		} else {
+			// First screen: WF Studio info + shortcut guide
+			b.WriteString(titleStyle.Render("🎨 CC WF Studio"))
+			b.WriteString("\n\n")
+
+			content := `CC WF Studio extension is installed!
 
 Keybinding registered: Ctrl+Shift+W
 
 Press the shortcut in Cursor to open the Workflow Editor.
 (You may need to reload Cursor window once)`
 
-		b.WriteString(boxStyle.Render(content))
-		b.WriteString("\n\n")
-
-		// Show skill paths only after shortcut was launched
-		if m.shortcutLaunched {
-			skillBoxStyle := lipgloss.NewStyle().
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("#888888")).
-				Padding(1, 2).
-				Width(60)
-
-			skillPaths := m.getSkillPathsContent()
-			b.WriteString(skillBoxStyle.Render(skillPaths))
+			b.WriteString(boxStyle.Render(content))
 			b.WriteString("\n\n")
-		}
 
-		// Keybinding highlight
-		keybindStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#00FFFF")).
-			Bold(true).
-			Background(lipgloss.Color("#333333")).
-			Padding(0, 1)
-		b.WriteString("Shortcut: ")
-		b.WriteString(keybindStyle.Render("Ctrl+Shift+W"))
-		b.WriteString("\n\n")
+			// Keybinding highlight
+			keybindStyle := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#00FFFF")).
+				Bold(true).
+				Background(lipgloss.Color("#333333")).
+				Padding(0, 1)
+			b.WriteString("Shortcut: ")
+			b.WriteString(keybindStyle.Render("Ctrl+Shift+W"))
+			b.WriteString("\n\n")
 
-		statusStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#00FF00")).
-			Bold(true)
-		b.WriteString(statusStyle.Render("● Installed (Cursor Extension)"))
-		b.WriteString("\n\n")
+			statusStyle := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#00FF00")).
+				Bold(true)
+			b.WriteString(statusStyle.Render("● Installed (Cursor Extension)"))
+			b.WriteString("\n\n")
 
-		if m.shortcutLaunched {
-			help := helpStyle.Render("esc: back")
-			b.WriteString(help)
-		} else {
-			help := helpStyle.Render("enter: register shortcut • esc: back")
+			help := helpStyle.Render("enter: view skill paths • esc: back")
 			b.WriteString(help)
 		}
 	} else {
