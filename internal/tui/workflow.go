@@ -331,6 +331,26 @@ func (m *WorkflowModel) View() string {
 	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, b.String())
 }
 
+func (m *WorkflowModel) getSkillPathsContent() string {
+	var userSkillPath string
+	switch runtime.GOOS {
+	case "windows":
+		userSkillPath = filepath.Join(os.Getenv("USERPROFILE"), ".claude", "skills")
+	default:
+		userSkillPath = filepath.Join(os.Getenv("HOME"), ".claude", "skills")
+	}
+
+	return fmt.Sprintf(`📁 Skill Paths (for Browse Skills)
+
+User Skills (all projects):
+  %s
+
+Project Skills (current project only):
+  .claude/skills/
+
+Add SKILL.md in a subfolder to register.`, userSkillPath)
+}
+
 func (m *WorkflowModel) viewWFStudio() string {
 	var b strings.Builder
 
@@ -358,6 +378,17 @@ Press the shortcut in Cursor to open the Workflow Editor.
 (You may need to reload Cursor window once)`
 
 		b.WriteString(boxStyle.Render(content))
+		b.WriteString("\n\n")
+
+		// Skill paths info
+		skillBoxStyle := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#888888")).
+			Padding(1, 2).
+			Width(60)
+
+		skillPaths := m.getSkillPathsContent()
+		b.WriteString(skillBoxStyle.Render(skillPaths))
 		b.WriteString("\n\n")
 
 		// Keybinding highlight
@@ -394,6 +425,17 @@ Install from Cursor Marketplace:
 Press Enter to open the installation page.`
 
 		b.WriteString(boxStyle.Render(content))
+		b.WriteString("\n\n")
+
+		// Skill paths info
+		skillBoxStyle := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#888888")).
+			Padding(1, 2).
+			Width(60)
+
+		skillPaths := m.getSkillPathsContent()
+		b.WriteString(skillBoxStyle.Render(skillPaths))
 		b.WriteString("\n\n")
 
 		statusStyle := lipgloss.NewStyle().
