@@ -487,16 +487,19 @@ func (m *WorkflowRunModel) View() string {
 			name = name[:15] + "..."
 		}
 
-		style := normalStyle
-		if node.Status == NodeRunning {
-			style = selectedStyle
-		} else if node.Status == NodeCompleted {
-			style = lipgloss.NewStyle().Foreground(secondaryColor)
-		} else if node.Status == NodeError {
-			style = lipgloss.NewStyle().Foreground(lipgloss.Color("#EF4444"))
-		} else if node.Status == NodeWaitingInput {
-			style = lipgloss.NewStyle().Foreground(accentColor)
-		}
+	var style lipgloss.Style
+	switch node.Status {
+	case NodeRunning:
+		style = selectedStyle
+	case NodeCompleted:
+		style = lipgloss.NewStyle().Foreground(secondaryColor)
+	case NodeError:
+		style = lipgloss.NewStyle().Foreground(lipgloss.Color("#EF4444"))
+	case NodeWaitingInput:
+		style = lipgloss.NewStyle().Foreground(accentColor)
+	default:
+		style = normalStyle
+	}
 
 		nodeList.WriteString(fmt.Sprintf("%s %s\n", icon, style.Render(name)))
 	}

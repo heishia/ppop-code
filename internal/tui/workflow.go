@@ -35,13 +35,14 @@ func (w WorkflowItem) Description() string { return w.path }
 func (w WorkflowItem) FilterValue() string { return w.name }
 
 type WorkflowModel struct {
-	list            list.Model
-	width           int
-	height          int
-	selected        string
-	err             error
-	showWFStudio    bool // Show WF Studio page
-	wfStudioInstall bool // true = installed, false = not installed
+	list             list.Model
+	width            int
+	height           int
+	selected         string
+	err              error
+	showWFStudio     bool // Show WF Studio page
+	wfStudioInstall  bool // true = installed, false = not installed
+	shortcutLaunched bool // true = user pressed Ctrl+Shift+W
 }
 
 // checkWFStudioInstalled checks if cc-wf-studio VSCode/Cursor extension is installed
@@ -143,6 +144,7 @@ func (m *WorkflowModel) CloseSubView() {
 // Reset resets the workflow model state (called when entering from menu)
 func (m *WorkflowModel) Reset() {
 	m.showWFStudio = false
+	m.shortcutLaunched = false
 	m.selected = ""
 }
 
@@ -161,10 +163,12 @@ func (m *WorkflowModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch {
 			case key.Matches(msg, DefaultKeyMap.Back):
 				m.showWFStudio = false
+				m.shortcutLaunched = false
 				return m, nil
 			case key.Matches(msg, DefaultKeyMap.Enter):
 				if m.wfStudioInstall {
-					// Launch CC WF Studio
+					// Launch CC WF Studio and show skill paths
+					m.shortcutLaunched = true
 					return m, m.launchWFStudio()
 				} else {
 					// Open install page in browser
@@ -380,16 +384,18 @@ Press the shortcut in Cursor to open the Workflow Editor.
 		b.WriteString(boxStyle.Render(content))
 		b.WriteString("\n\n")
 
-		// Skill paths info
-		skillBoxStyle := lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#888888")).
-			Padding(1, 2).
-			Width(60)
+		// Show skill paths only after shortcut was launched
+		if m.shortcutLaunched {
+			skillBoxStyle := lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(lipgloss.Color("#888888")).
+				Padding(1, 2).
+				Width(60)
 
-		skillPaths := m.getSkillPathsContent()
-		b.WriteString(skillBoxStyle.Render(skillPaths))
-		b.WriteString("\n\n")
+			skillPaths := m.getSkillPathsContent()
+			b.WriteString(skillBoxStyle.Render(skillPaths))
+			b.WriteString("\n\n")
+		}
 
 		// Keybinding highlight
 		keybindStyle := lipgloss.NewStyle().
@@ -407,8 +413,13 @@ Press the shortcut in Cursor to open the Workflow Editor.
 		b.WriteString(statusStyle.Render("● Installed (Cursor Extension)"))
 		b.WriteString("\n\n")
 
-		help := helpStyle.Render("esc: back")
-		b.WriteString(help)
+		if m.shortcutLaunched {
+			help := helpStyle.Render("esc: back")
+			b.WriteString(help)
+		} else {
+			help := helpStyle.Render("enter: register shortcut • esc: back")
+			b.WriteString(help)
+		}
 	} else {
 		// Not installed - show install page
 		b.WriteString(titleStyle.Render("🎨 CC WF Studio"))
@@ -425,17 +436,6 @@ Install from Cursor Marketplace:
 Press Enter to open the installation page.`
 
 		b.WriteString(boxStyle.Render(content))
-		b.WriteString("\n\n")
-
-		// Skill paths info
-		skillBoxStyle := lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#888888")).
-			Padding(1, 2).
-			Width(60)
-
-		skillPaths := m.getSkillPathsContent()
-		b.WriteString(skillBoxStyle.Render(skillPaths))
 		b.WriteString("\n\n")
 
 		statusStyle := lipgloss.NewStyle().
