@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(git -C \"C:/Dev/ppopcode\" log --oneline)",
+      "Bash(git -C \"C:/Dev/ppopcode\" log --reverse --format=\"%ai\")",
+      "Bash(git -C \"C:/Dev/ppopcode\" log -1 --format=\"%ai\")",
+      "Bash(git -C \"C:/Dev/ppopcode\" status)",
+      "Bash(git -C \"C:/Dev/ppopcode\" diff)",
+      "Bash(git -C \"C:/Dev/ppopcode\" log --oneline -5)",
+      "Bash(git -C \"C:/Dev/ppopcode\" add portfolio/meta.json)",
+      "Bash(git -C \"C:/Dev/ppopcode\" commit -m \"$\\(cat <<''EOF''\n포트폴리오 메타데이터 실측 데이터로 업데이트\n\n타임라인, LOC, 커밋 수, 기술스택을 실제 git 기록 기반으로 보정\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}

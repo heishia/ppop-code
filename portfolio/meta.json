@@ -14,9 +14,9 @@
   },
 
   "timeline": {
-    "start_date": "2024-01-01",
-    "end_date": "2025-01-23",
-    "is_ongoing": false
+    "start_date": "2026-01-20",
+    "end_date": "2026-01-23",
+    "is_ongoing": true
   },
 
   "technologies": [
@@ -25,7 +25,8 @@
     { "name": "Lip Gloss", "category": "Frontend", "version": "1.0.0" },
     { "name": "Bubbles", "category": "Frontend", "version": "0.20.0" },
     { "name": "Claude API", "category": "AI" },
-    { "name": "YAML", "category": "Tool" }
+    { "name": "YAML", "category": "Tool" },
+    { "name": "Cursor IDE", "category": "Tool" }
   ],
 
   "features": [
@@ -37,8 +38,8 @@
   ],
 
   "screenshots": [
-    { "file": "main.png", "caption": "메인 메뉴", "type": "desktop" },
-    { "file": "chat.png", "caption": "채팅 화면", "type": "desktop" }
+    { "file": "main.png", "caption": "메인 메뉴 화면", "type": "desktop" },
+    { "file": "chat.png", "caption": "AI 채팅 화면", "type": "desktop" }
   ],
 
   "links": {
@@ -47,8 +48,8 @@
   },
 
   "metrics": {
-    "lines_of_code": 2500,
-    "commit_count": 50,
+    "lines_of_code": 6425,
+    "commit_count": 48,
     "contributor_count": 1
   },
 
